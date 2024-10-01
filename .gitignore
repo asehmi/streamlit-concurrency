@@ -1,3 +1,5 @@
 .conda_env_created
 /venv
 *.egg-info
+*.pyc
+__pycache__
