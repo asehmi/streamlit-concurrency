@@ -29,7 +29,7 @@ def main():
     t1 = WorkerThread(5, result_1)
     t2 = WorkerThread(5, result_2)
     # obtain the ScriptRunContext of current Script Thread, and assign to worker threads
-    # add_script_run_ctx(t1, get_script_run_ctx())
+    add_script_run_ctx(t1, get_script_run_ctx())
     add_script_run_ctx(t2, get_script_run_ctx())
     t1.start()
     t2.start()
