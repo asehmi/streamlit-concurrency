@@ -1,6 +1,7 @@
 from functools import singledispatch
 from typing import Callable, Optional, TypedDict, Union
 
+
 @singledispatch
 def run_in_worker_thread(
     maybe_callable: Optional[Callable] = None, **kwargs
