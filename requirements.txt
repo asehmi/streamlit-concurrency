@@ -1,5 +1,6 @@
-streamlit==1.38.0
+streamlit==1.44.1
 # typing-extensions==4.12.2
 ruff
+pur
 pytest
-mypy
+# mypy

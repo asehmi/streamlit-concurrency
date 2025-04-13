@@ -1,4 +1,4 @@
-PYTHON_BIN ?= python3.10
+PYTHON_BIN ?= python3
 CONDA_ENV ?= streamlit_dev_py310
 CONDA_YML ?= conda-py310.yaml
 
@@ -35,5 +35,6 @@ conda-venv: .conda_env_created
 	# setup conda environment AND env-wise deps
 	micromamba env create -n $(CONDA_ENV) --yes -f $(CONDA_YML)
 	touch $@
+
 upgrade-deps:
-	for i in ../packages/deps-*.txt ; do venv/bin/pur -r $$i; done
+	venv/bin/pur -r requirements.txt
