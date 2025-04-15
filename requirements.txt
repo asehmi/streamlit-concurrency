@@ -1,6 +1,9 @@
+# DEV deps
 streamlit==1.44.1
 # typing-extensions==4.12.2
 ruff
 pur
 pytest
-# mypy
+pytest-asyncio==0.26.0
+pytest-mypy-plugins==3.2.0
+mypy

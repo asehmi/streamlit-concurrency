@@ -4,6 +4,11 @@ import time
 from threading import Thread
 
 
+@st.cache_data(hash_funcs={})
+def foo():
+    pass
+
+
 class WorkerThread(Thread):
     def __init__(self, delay, target):
         super().__init__()
