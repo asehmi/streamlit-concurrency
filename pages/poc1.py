@@ -12,7 +12,7 @@ async def async1(dest, interval: float, stop_after: float):
     deadline = datetime.datetime.now() + datetime.timedelta(seconds=stop_after)
     while datetime.datetime.now() < deadline:
         await asyncio.sleep(interval)
-        dest.write(datetime.datetime.now())
+        dest.markdown(datetime.datetime.now())
 
 
 async def main():

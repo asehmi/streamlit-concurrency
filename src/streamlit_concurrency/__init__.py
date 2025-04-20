@@ -1,1 +1,1 @@
-from .decorators import run_in_executor
+from ._obsolete.decorators import run_in_executor

@@ -50,7 +50,7 @@ def wrap_callable(callable, params: DecoratorParams) -> Callable:
     executor = params.get("executor")
     match executor:
         case ExecutorType.threaded | None:
-            from .executors import sfc_thread_pool_executor
+            from .._executors import sfc_thread_pool_executor
 
             executor = sfc_thread_pool_executor
         case _ if isinstance(executor, Executor):
@@ -59,9 +59,9 @@ def wrap_callable(callable, params: DecoratorParams) -> Callable:
         # executor = executor()
         case _:
             raise ValueError(f"unrecognized executor: {executor}")
-    assert isinstance(
-        executor, Executor
-    ), f"executor must be an instance of concurrent.futures.Executor, got {executor}"
+    assert isinstance(executor, Executor), (
+        f"executor must be an instance of concurrent.futures.Executor, got {executor}"
+    )
 
     # TODO
     copy_script_run_context = params.get("copy_script_run_context", False)
