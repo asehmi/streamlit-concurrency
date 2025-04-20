@@ -1,6 +1,8 @@
 # streamlit-concurrency
 
-Easier concurrency in streamlit.
+Simpler and safer concurrency for streamlit.
+
+To detail, it
 
 - Run slow or heavy code with `asyncio` or `concurrent.future.Executor`
 
@@ -11,6 +13,13 @@ Easier concurrency in streamlit.
 - Save resource by signals
     - Auto stop running when a new page run starts (i.e. a new `ScriptThread`)
     - Auto release when session `SessionContext` stops
+
+## Concurrency function decorators
+
+## State management
+
+## Page run or session lifetime signals
+
 
 ## Possible inputs
 
