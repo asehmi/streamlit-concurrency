@@ -3,4 +3,4 @@ channels:
 # - pytorch
 # - nvidia
 dependencies:
-- python<3.11
+- python<3.14

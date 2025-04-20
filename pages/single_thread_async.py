@@ -1,6 +1,6 @@
 import asyncio
 import streamlit as st
-import streamlit_concurrency.demo as scdemo
+import streamlit_concurrency.demo as demo
 import datetime
 
 st.markdown("""
@@ -16,7 +16,7 @@ dest1 = st.empty()
 dest2 = st.empty()
 
 
-scdemo.render_page_src(__file__)
+demo.render_page_src(__file__)
 
 
 async def async1(dest, interval: float, stop_after: float):

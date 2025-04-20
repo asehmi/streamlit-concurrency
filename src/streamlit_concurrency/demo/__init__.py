@@ -8,20 +8,19 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
 
 
+def read_repo_file(file_path: str) -> str:
+    """
+    Read a file from the repository and return its content as a string.
+    """
+    with open(REPO_ROOT / file_path, "r") as f:
+        return f.read()
+
+
 def render_page_src(page_file: str):
-    with st.expander("Source code", expanded=False):
-        code = get_page_code(page_file)
+    with st.expander("Page source code", expanded=False):
+        code = Path(page_file).read_text()
         st.code(code, language="python", line_numbers=True)
     st.markdown(f"View source code on [GitHub]({to_github_url(page_file)})")
-
-
-def get_page_code(page_file: str) -> str:
-    """
-    Read the content of the page file and return it as a string.
-    """
-    with open(page_file, "r") as f:
-        code = f.read()
-    return code
 
 
 def to_github_url(page_file: str) -> str:

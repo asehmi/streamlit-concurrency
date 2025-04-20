@@ -14,6 +14,15 @@ To detail, it
     - Auto stop running when a new page run starts (i.e. a new `ScriptThread`)
     - Auto release when session `SessionContext` stops
 
+
+## Example pages
+
+
+- 
+    - x
+- with streamlit-concurrency
+- all combined
+
 ## Concurrency function decorators
 
 ## State management
