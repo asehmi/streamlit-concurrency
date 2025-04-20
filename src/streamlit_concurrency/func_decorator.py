@@ -13,7 +13,14 @@ from typing import (
     Any,
 )
 import asyncio
-from ._func_util import assert_is_async, assert_is_sync, assert_has_script_thread
+import contextlib
+from streamlit.runtime.scriptrunner import ScriptRunContext
+from ._func_util import (
+    assert_is_async,
+    assert_is_sync,
+    assert_has_script_thread,
+    create_script_run_context_cm,
+)
 
 from ._executors import _get_thread_pool_executor
 
@@ -35,7 +42,7 @@ def wrap_sync(
     cache_ttl: int | None = None,
     hash_funcs: HashFuncsDict | None = None,
     executor: Executor | None = None,
-    copy_script_run_context: bool = False,
+    with_script_run_context: bool = False,
 ) -> Callable[[Callable[P, R]], Callable[P, Awaitable[R]]]:
     """Transforms a sync function into an async function, with st-aware helpers"""
     if executor is None:
@@ -45,8 +52,19 @@ def wrap_sync(
         assert_is_sync(func)
 
         def wrapper(*args, **kwargs):
-            # TODO: capture bindings to caller context
-            return _run_sync_in_executor(executor, func, *args, **kwargs)
+            # a wrapper that
+            # 1. capture objects from caller (expectedly a streamlit ScriptThread)
+            if with_script_run_context:
+                cm = create_script_run_context_cm(assert_has_script_thread())
+            else:
+                cm = contextlib.nullcontext()
+
+            def func_for_executor():
+                with cm:
+                    return func(*args, **kwargs)
+
+            future = executor.submit(func_for_executor)
+            return asyncio.wrap_future(future)
 
         return wrapper
 

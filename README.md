@@ -1,27 +1,26 @@
 # streamlit-concurrency
 
-Simpler and safer concurrency for streamlit.
+The library for simpler and safer concurrency in streamlit.
 
-To detail, it
+Based on [how threads work in streamlit](https://docs.streamlit.io/develop/concepts/design/multithreading), this library provides opinionated helpers to
 
-- Run slow or heavy code with `asyncio` or `concurrent.future.Executor`
+- transform slow functions to run in `concurrent.future.Executor` (ThreadPoolExecutor, ProcessPoolExecutor and more)
+- access streamlit APIs like `st.write` and `st.session_state` in different threads
+- minimize user's wait time
 
-- State management inside or across pages
+<!-- TODO future
+- simplify state management in and across pages
+- listen for cancelled page run or terminated session, and prevent unnecessary code run
+-->
 
-- Reduce wait by caching / executor / asyncio
-
-- Save resource by signals
-    - Auto stop running when a new page run starts (i.e. a new `ScriptThread`)
-    - Auto release when session `SessionContext` stops
+## Recommended 
 
 
 ## Example pages
 
-
-- 
-    - x
-- with streamlit-concurrency
-- all combined
+- `incorrect_multithreading`: what happens when 
+- `function decorators`: executor / caching / `st.
+- `
 
 ## Concurrency function decorators
 

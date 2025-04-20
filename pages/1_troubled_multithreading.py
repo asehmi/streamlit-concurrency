@@ -1,5 +1,6 @@
 import streamlit as st
 import threading
+import time
 import streamlit_concurrency.demo as demo
 
 st.markdown("""
@@ -27,6 +28,8 @@ def get_data():
 
 class CustomThreadUpdatingWidget(threading.Thread):
     def run(self):
+        # sleeping
+        time.sleep(2)
         # a custom thread can call @st.cache_data() function
         data = get_data()
         assert data == "dummy"
@@ -39,6 +42,7 @@ class CustomThreadReadingSessionState(threading.Thread):
     def run(self):
         value = st.session_state.get("foo", None)
         assert value is None, "Session state should be None in a new thread"
+        time.sleep(2)
         print(
             f"st.session_state['foo'] as seen by {threading.current_thread().name} is {value}"
         )
@@ -47,8 +51,6 @@ class CustomThreadReadingSessionState(threading.Thread):
 if update_widget_clicked:
     t = CustomThreadUpdatingWidget()
     t.start()
-    t.join()
 elif read_session_state_clicked:
     t = CustomThreadReadingSessionState()
     t.start()
-    t.join()
