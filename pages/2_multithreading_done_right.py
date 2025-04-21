@@ -7,7 +7,7 @@ import streamlit_concurrency.demo as demo
 from streamlit_concurrency.func_decorator import wrap_sync
 
 st.markdown("""
-This page demostrates multithreading with `streamlit-concurrency`.
+This page demostrates correct multithreading with `streamlit-concurrency`.
             
 In this page (compared to `troubled multithreading` page):
 
@@ -15,6 +15,8 @@ In this page (compared to `troubled multithreading` page):
 2. session state can be accessed in an executor thread
 3. "RUNNING" indicator correctly reflects code running in executor
 4. internally the ScriptRunContext object is context-managed and won't be leaked
+
+---
 """)
 st.session_state["foo"] = "foo-value"
 

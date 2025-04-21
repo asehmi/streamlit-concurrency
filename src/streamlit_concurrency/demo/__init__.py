@@ -17,10 +17,11 @@ def read_repo_file(file_path: str) -> str:
 
 
 def render_page_src(page_file: str):
-    with st.expander("Page source code", expanded=False):
+    st.divider()
+    with st.expander("Source code for this page", expanded=False):
         code = Path(page_file).read_text()
         st.code(code, language="python", line_numbers=True)
-    st.markdown(f"View source code on [GitHub]({to_github_url(page_file)})")
+    # st.markdown(f"Or view on [GitHub]({to_github_url(page_file)})")
 
 
 def to_github_url(page_file: str) -> str:

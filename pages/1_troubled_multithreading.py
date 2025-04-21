@@ -4,8 +4,10 @@ import time
 import streamlit_concurrency.demo as demo
 
 st.markdown("""
-This page demostrates incorrect use of multithreading in streamlit.
+This page demostrates incorrect cases of multithreading in streamlit.
             
+---
+
 Please click a button and check exceptions and warnings in the console.
 """)
 
@@ -15,6 +17,7 @@ update_widget_clicked = st.button(f"Update widget in a new thread")
 
 read_session_state_clicked = st.button("Read session state in a new thread")
 
+# won't be updated actually
 result = st.empty()
 
 st.divider()
