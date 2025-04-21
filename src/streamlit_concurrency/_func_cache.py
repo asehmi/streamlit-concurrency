@@ -1,0 +1,14 @@
+from datetime import timedelta
+from streamlit.runtime.caching.cache_data_api import (
+    CachePersistType,
+)
+from streamlit.runtime.caching.hashing import HashFuncsDict
+from typing import TypedDict
+
+
+class CacheConf(TypedDict):
+    ttl: float | timedelta | str | None
+    max_entries: int | None
+    show_spinner: bool | str
+    persist: CachePersistType | bool | None
+    hash_funcs: HashFuncsDict | None

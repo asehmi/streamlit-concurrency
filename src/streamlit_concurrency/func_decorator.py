@@ -1,9 +1,12 @@
+from click import Option
+import streamlit as st
 from concurrent.futures import Executor
 from streamlit.runtime.caching.hashing import HashFuncsDict
 import concurrent.futures as cf
 from typing import (
     Awaitable,
     Literal,
+    Optional,
     TypeVar,
     Callable,
     ParamSpec,
@@ -20,6 +23,7 @@ from ._func_util import (
     assert_has_script_thread,
     create_script_run_context_cm,
 )
+from ._func_cache import CacheConf
 
 from ._executors import _get_thread_pool_executor, _get_process_pool_executor
 
@@ -28,10 +32,7 @@ P = ParamSpec("P")
 
 
 def wrap_sync(
-    cache_key: str | None = None,
-    cache_storage: str | None = None,
-    cache_ttl: int | None = None,
-    hash_funcs: HashFuncsDict | None = None,
+    cache: Optional[CacheConf | dict] = None,
     executor: Executor | Literal["thread_pool", "process_pool"] = "thread_pool",
     with_script_run_context: bool = False,
 ) -> Callable[[Callable[P, R]], Callable[P, Awaitable[R]]]:
@@ -77,7 +78,12 @@ def wrap_sync(
 
             def func_for_executor():
                 with cm:
-                    return func(*args, **kwargs)
+                    if cache is not None:
+                        real_func = st.cache_data(func, **cache)
+                    else:
+                        real_func = func
+
+                    return real_func(*args, **kwargs)
 
             future = executor.submit(func_for_executor)
             return asyncio.wrap_future(future)
