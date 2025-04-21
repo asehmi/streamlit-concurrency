@@ -1,10 +1,9 @@
-"""_summary_"""
-
 from concurrent.futures import Executor
 from streamlit.runtime.caching.hashing import HashFuncsDict
 import concurrent.futures as cf
 from typing import (
     Awaitable,
+    Literal,
     TypeVar,
     Callable,
     ParamSpec,
@@ -22,18 +21,10 @@ from ._func_util import (
     create_script_run_context_cm,
 )
 
-from ._executors import _get_thread_pool_executor
+from ._executors import _get_thread_pool_executor, _get_process_pool_executor
 
 R = TypeVar("R")
 P = ParamSpec("P")
-
-
-async def _run_sync_in_executor(
-    ex: Executor, sync_func: Callable[P, R], *args: P.args, **kwargs: P.kwargs
-) -> R:
-    future: cf.Future[R] = ex.submit(sync_func, *args, **kwargs)
-    res: R = await asyncio.wrap_future(future)
-    return res
 
 
 def wrap_sync(
@@ -41,12 +32,35 @@ def wrap_sync(
     cache_storage: str | None = None,
     cache_ttl: int | None = None,
     hash_funcs: HashFuncsDict | None = None,
-    executor: Executor | None = None,
+    executor: Executor | Literal["thread_pool", "process_pool"] = "thread_pool",
     with_script_run_context: bool = False,
 ) -> Callable[[Callable[P, R]], Callable[P, Awaitable[R]]]:
-    """Transforms a sync function into an async function, with st-aware helpers"""
-    if executor is None:
+    """Transforms a sync function to run in executor and return result as Awaitable
+
+    @param cache_key: cache key
+    @param cache_storage: cache storage
+    @param cache_ttl: cache ttl
+    @param hash_funcs: hash functions
+    @param executor: executor to run the function in, can be 'thread_pool', 'process_pool' or an concurrent.futures.Executor
+    @param with_script_run_context: if True, the function will be run with a ScriptRunContext.
+    With a ScriptRunContext it will be able to call specific streamlit APIs.
+    Must be used with a ThreadPoolExecutor.
+
+
+    """
+    if executor == "thread_pool":
         executor = _get_thread_pool_executor()
+    elif executor == "process_pool":
+        executor = _get_process_pool_executor()
+    elif not isinstance(executor, cf.Executor):
+        raise ValueError(
+            f"executor must be 'thread_pool', 'process_pool' or an instance of concurrent.futures.Executor, got {executor}"
+        )
+
+    if with_script_run_context and not isinstance(executor, cf.ThreadPoolExecutor):
+        raise ValueError(
+            "with_script_run_context=True can only be used with a ThreadPoolExecutor"
+        )
 
     def decorator(func: Callable):
         assert_is_sync(func)

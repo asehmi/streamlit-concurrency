@@ -1,1 +1,3 @@
-from ._obsolete.decorators import run_in_executor
+from .func_decorator import wrap_sync
+
+__all__ = ["wrap_sync"]

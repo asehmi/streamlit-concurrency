@@ -4,7 +4,7 @@ import time
 import asyncio
 import datetime
 import streamlit_concurrency.demo as demo
-from streamlit_concurrency.func_decorator import wrap_sync
+from streamlit_concurrency import wrap_sync
 
 st.markdown("""
 This page demostrates correct multithreading with `streamlit-concurrency`.
@@ -20,11 +20,14 @@ In this page (compared to `troubled multithreading` page):
 """)
 st.session_state["foo"] = "foo-value"
 
-sleep1 = st.number_input("sleep in thread 1", min_value=0, value=1, max_value=6)
-dest1 = st.empty()
+col1, col2 = st.columns(2)
+with col1:
+    sleep1 = st.number_input("sleep in task 1", min_value=0, value=0, max_value=6)
+    dest1 = st.empty()
 
-sleep2 = st.number_input("sleep in thread 2", min_value=0, value=1, max_value=5)
-dest2 = st.empty()
+with col2:
+    sleep2 = st.number_input("sleep in task 2", min_value=0, value=0, max_value=5)
+    dest2 = st.empty()
 
 timeline_placeholder = st.empty()
 
@@ -53,12 +56,14 @@ async def main():
 
         timeline_placeholder.markdown(
             f"""
-            Concurrent task 1: start={start1} end={end1}
+---
 
-            Concurrent task 2: start={start2} end={end2}
+Task 1: start={start1} end={end1}
 
-            Script run: end at {datetime.datetime.now()}
-            """
+Task 2: start={start2} end={end2}
+
+Script run finishes at {datetime.datetime.now()}
+""".strip()
         )
 
 
