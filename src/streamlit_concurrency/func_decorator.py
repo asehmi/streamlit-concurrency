@@ -79,6 +79,8 @@ def wrap_sync(
             def func_for_executor():
                 with cm:
                     if cache is not None:
+                        # st.cache_data needs the real user function
+                        # its cache key depends on code position and code text
                         real_func = st.cache_data(func, **cache)
                     else:
                         real_func = func
