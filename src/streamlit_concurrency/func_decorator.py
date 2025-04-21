@@ -67,7 +67,9 @@ def wrap_sync(
 
         def wrapper(*args, **kwargs):
             # a wrapper that
-            # 1. capture objects from caller (expectedly a streamlit ScriptThread)
+            # 1. capture possible ScriptRunContext
+            # 2. run decorated `func` in executor, with a context-managed ScriptRunContext
+            # 3. return a Awaitable
             if with_script_run_context:
                 cm = create_script_run_context_cm(assert_has_script_thread())
             else:
