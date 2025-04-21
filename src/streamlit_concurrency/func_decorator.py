@@ -20,7 +20,7 @@ from streamlit.runtime.scriptrunner import ScriptRunContext
 from ._func_util import (
     assert_is_async,
     assert_is_sync,
-    assert_has_script_thread,
+    assert_st_script_run_ctx,
     create_script_run_context_cm,
 )
 from ._func_cache import CacheConf
@@ -38,15 +38,13 @@ def wrap_sync(
 ) -> Callable[[Callable[P, R]], Callable[P, Awaitable[R]]]:
     """Transforms a sync function to run in executor and return result as Awaitable
 
-    @param cache_key: cache key
-    @param cache_storage: cache storage
-    @param cache_ttl: cache ttl
-    @param hash_funcs: hash functions
-    @param executor: executor to run the function in, can be 'thread_pool', 'process_pool' or an concurrent.futures.Executor
-    @param with_script_run_context: if True, the function will be run with a ScriptRunContext.
-    With a ScriptRunContext it will be able to call specific streamlit APIs.
-    Must be used with a ThreadPoolExecutor.
+    @param cache: configuration to pass to st.cache_data()
 
+    @param executor: executor to run the function in, can be 'thread_pool', 'process_pool' or an concurrent.futures.Executor
+
+    @param with_script_run_context: if True, the function will be run with a ScriptRunContext. Must be used with a ThreadPoolExecutor.
+
+    See [multithreading](https://docs.streamlit.io/develop/concepts/design/multithreading) for possible motivation and consequences.
 
     """
     if executor == "thread_pool":
@@ -72,7 +70,7 @@ def wrap_sync(
             # 2. run decorated `func` in executor, with a context-managed ScriptRunContext
             # 3. return a Awaitable
             if with_script_run_context:
-                cm = create_script_run_context_cm(assert_has_script_thread())
+                cm = create_script_run_context_cm(assert_st_script_run_ctx())
             else:
                 cm = contextlib.nullcontext()
 

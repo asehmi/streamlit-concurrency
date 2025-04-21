@@ -12,12 +12,12 @@ from streamlit.runtime.scriptrunner_utils.script_run_context import (
 )
 
 
-def assert_has_script_thread(target="This function") -> ScriptRunContext:
+def assert_st_script_run_ctx(target="This function") -> ScriptRunContext:
     """Assert that the current thread is the script thread."""
     ctx = get_script_run_ctx(suppress_warning=True)
     if ctx is None:
         raise RuntimeError(
-            f"{target} must be called in a thread with ScriptRunContext. Typically a ScriptThread running a streamlit page."
+            f"{target} must be called in a thread with ScriptRunContext. Typically a ScriptThread running page code."
         )
     return ctx
 

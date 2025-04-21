@@ -1,6 +1,6 @@
 import streamlit
 from typing import Callable, Generic, Self, Type, TypeVar, Any, Dict
-from ._func_util import assert_has_script_run_ctx
+from ._func_util import assert_st_script_run_ctx
 import logging
 
 logger = logging.getLogger(__name__)
@@ -50,7 +50,7 @@ class StateRef(Generic[S]):
 def use_state(
     key: str, namespace: str | None = None, type_: Type[S] = Type[Any]
 ) -> StateRef[S]:
-    assert_has_script_run_ctx("use_state()")
+    assert_st_script_run_ctx("use_state()")
     storage = streamlit.session_state.get("_streamlit_concurrency_states")
     if storage is None:
         logger.debug(f"initializing state storage for Streamlit session")

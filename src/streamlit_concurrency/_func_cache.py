@@ -7,6 +7,8 @@ from typing import TypedDict
 
 
 class CacheConf(TypedDict):
+    """params for streamlit.cache_data"""
+
     ttl: float | timedelta | str | None
     max_entries: int | None
     show_spinner: bool | str
