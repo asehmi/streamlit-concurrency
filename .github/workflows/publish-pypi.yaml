@@ -28,4 +28,9 @@ jobs:
       run: |
         python3 -m pip install build --user
 
+    - name: Build
+      run: |
+        python3 -m build --wheel --sdist
+
+
     - uses: pypa/gh-action-pypi-publish@release/v1
