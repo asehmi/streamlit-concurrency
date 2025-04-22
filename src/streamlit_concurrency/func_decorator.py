@@ -14,8 +14,8 @@ from typing import (
     overload,
 )
 from ._func_cache import CacheConf
-from ._async_func_decorator import wrap_async
-from ._run_sync_in_executor import wrap_sync
+from ._decorator_async import wrap_async
+from ._decorator_sync import wrap_sync
 
 R = TypeVar("R")
 P = ParamSpec("P")

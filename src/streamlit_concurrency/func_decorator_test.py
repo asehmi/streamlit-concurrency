@@ -1,6 +1,7 @@
 import pytest
-from .func_decorator import run_in_executor
 import asyncio
+
+from .func_decorator import run_in_executor
 
 
 @pytest.mark.asyncio

@@ -9,7 +9,7 @@ deps: venv/.deps_installed requirements.txt
 
 
 venv/.deps_installed: requirements.txt
-	venv/bin/pip install -r requirements.txt --editable .
+	venv/bin/pip install -r requirements.txt
 	touch $@
 
 test:
@@ -38,3 +38,9 @@ conda-venv: .conda_env_created
 
 upgrade-deps:
 	venv/bin/pur -r requirements.txt
+
+dist: .PHONY
+	rm -rvf dist
+	venv/bin/python3 -m build --sdist
+
+.PHONY:

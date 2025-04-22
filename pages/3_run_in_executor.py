@@ -11,7 +11,10 @@ dest = st.container()
 run_clicked = st.button("Run main()")
 
 
-@run_in_executor(cache={"ttl": 3}, with_script_run_context=True)
+@run_in_executor(
+    # cache={"ttl": 3},
+    with_script_run_context=True,
+)
 def cached_sync():
     now = datetime.datetime.now()
     dest.write(
@@ -20,21 +23,41 @@ def cached_sync():
     return now
 
 
-@run_in_executor(cache={"ttl": 5}, with_script_run_context=True)
-async def cached_async():
+@run_in_executor(
+    # cache={"ttl": 5},
+    with_script_run_context=True,
+)
+async def cached_async1():
     await asyncio.sleep(1)
     now = datetime.datetime.now()
     dest.write(
-        f"{now}: {cached_async.__name__}() running in {threading.current_thread().name}"
+        f"{now}: {cached_async1.__name__}() running in {threading.current_thread().name}"
+    )
+    await asyncio.sleep(1)
+    return now
+
+
+@run_in_executor(
+    # cache={"ttl": 5},
+    with_script_run_context=True,
+)
+async def cached_async2():
+    await asyncio.sleep(1)
+    now = datetime.datetime.now()
+    dest.write(
+        f"{now}: {cached_async2.__name__}() running in {threading.current_thread().name}"
     )
     await asyncio.sleep(1)
     return now
 
 
 async def main():
-    sync_result, async_result = await asyncio.gather(cached_sync(), cached_async())
+    sync_result, async1_result, async2_result = await asyncio.gather(
+        cached_sync(), cached_async1(), cached_async2()
+    )
     dest.write(f"{cached_sync.__name__}() returned {sync_result}")
-    dest.write(f"{cached_async.__name__}() returned {async_result}")
+    dest.write(f"{cached_async1.__name__}() returned {async1_result}")
+    dest.write(f"{cached_async2.__name__}() returned {async2_result}")
     dest.write(
         f"{datetime.datetime.now()}: main() done in script thread {threading.current_thread().name}"
     )

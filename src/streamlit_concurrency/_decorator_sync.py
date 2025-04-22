@@ -14,6 +14,7 @@ import contextlib
 import logging
 from ._func_util import (
     dump_func_metadata,
+    dump_func_code,
     assert_is_sync,
     assert_st_script_run_ctx,
     create_script_run_context_cm,
@@ -68,6 +69,7 @@ def wrap_sync(
         assert_is_sync(func)
 
         dump_func_metadata(func)
+        dump_func_code("wrap_sync", func)
 
         def wrapper(*args, **kwargs):
             # a wrapper that
@@ -79,19 +81,19 @@ def wrap_sync(
             else:
                 cm = contextlib.nullcontext()
 
-            def func_for_executor():
+            def func_for_executor(*args_, **kwargs_):
                 # NOTE: need to make sure this works with other executors
+                if cache is not None:
+                    # st.cache_data needs the real user function
+                    # its cache key depends on code position and code text
+                    real_func = st.cache_data(func, **cache)
+                else:
+                    real_func = func
+
                 with cm:
-                    if cache is not None:
-                        # st.cache_data needs the real user function
-                        # its cache key depends on code position and code text
-                        real_func = st.cache_data(func, **cache)
-                    else:
-                        real_func = func
+                    return real_func(*args_, **kwargs_)
 
-                    return real_func(*args, **kwargs)
-
-            future = executor.submit(func_for_executor)
+            future = executor.submit(func_for_executor, *args, **kwargs)
             return asyncio.wrap_future(future)
 
         return functools.update_wrapper(wrapper, func)

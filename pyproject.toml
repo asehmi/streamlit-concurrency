@@ -1,6 +1,7 @@
 [project]
 name = 'streamlit-concurrency'
-version = '0.0.0'
+description = "Easier and safer concurrency for Streamlit"
+version = '0.0.1'
 
 [tool.ruff]
 

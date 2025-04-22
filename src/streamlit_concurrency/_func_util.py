@@ -1,4 +1,5 @@
 import inspect
+import asyncio
 import contextlib
 import threading
 import logging
@@ -66,17 +67,21 @@ def create_script_run_context_cm(script_run_ctx: ScriptRunContext):
 
 
 def dump_func_metadata(func: Callable):
+    return
     logger.warning(
-        "function metadata: %s %s %s %s",
+        "function metadata: %s %s %s",
         func.__module__,
         func.__name__,
         func.__qualname__,
-        func.__code__,
     )
     logger.warning(
         "getsource: %s",
         inspect.getsource(func),
     )
+
+
+def dump_func_code(callsite: str, func: Callable):
+    logger.warning("function code at %s: %s", callsite, func.__code__)
 
 
 def log_with_callsite(msg: str, *args, **kwargs):
@@ -87,3 +92,15 @@ def log_with_callsite(msg: str, *args, **kwargs):
         threading.current_thread().name,
         msg.format(*args, **kwargs),
     )
+
+
+def async_to_sync(async_fun):
+    """Similar to asgiref.sync.async_to_sync, but only supports a 'clean' thread without a event loop."""
+
+    assert inspect.iscoroutinefunction(async_fun)
+    assert not inspect.isasyncgenfunction(async_fun)
+
+    def sync_fun(*args, **kwargs):
+        return asyncio.run(async_fun(*args, **kwargs))
+
+    return sync_fun
