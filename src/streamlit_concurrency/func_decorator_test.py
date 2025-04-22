@@ -1,11 +1,11 @@
 import pytest
-from .func_decorator import wrap_async, wrap_sync
+from .func_decorator import run_in_executor
 import asyncio
 
 
 @pytest.mark.asyncio
 async def test_sync_1():
-    @wrap_sync()
+    @run_in_executor()
     def f(x: int, y: int) -> int:
         return x + y
 
@@ -16,7 +16,7 @@ async def test_sync_1():
 async def test_sync_cached():
     sum = 0
 
-    @wrap_sync(cache={"ttl": 1})
+    @run_in_executor(cache={"ttl": 1})
     def inc(delta: int):
         nonlocal sum
         sum += delta

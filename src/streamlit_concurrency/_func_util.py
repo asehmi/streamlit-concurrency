@@ -3,6 +3,9 @@ import contextlib
 import threading
 import logging
 from typing import Callable
+import sys
+import os
+
 
 from streamlit.runtime.scriptrunner import (
     get_script_run_ctx,
@@ -73,4 +76,14 @@ def dump_func_metadata(func: Callable):
     logger.warning(
         "getsource: %s",
         inspect.getsource(func),
+    )
+
+
+def log_with_callsite(msg: str, *args, **kwargs):
+    logger.warning(
+        "pid=%s tid=%s thread=%s %s",
+        os.getpid(),
+        threading.current_thread().ident,
+        threading.current_thread().name,
+        msg.format(*args, **kwargs),
     )

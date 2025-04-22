@@ -4,7 +4,9 @@ import time
 import asyncio
 import datetime
 import streamlit_concurrency.demo as demo
-from streamlit_concurrency import wrap_sync
+from streamlit_concurrency import run_in_executor
+
+logger = demo.logger
 
 st.markdown("""
 This page demostrates correct multithreading with `streamlit-concurrency`.
@@ -35,7 +37,7 @@ timeline_placeholder = st.empty()
 update_widget_clicked = st.button(f"Run tasks in executor")
 
 
-@wrap_sync(with_script_run_context=True)
+@run_in_executor(with_script_run_context=True)
 def time_consuming_task(dest, delay: float):
     start = datetime.datetime.now()
     time.sleep(delay)
