@@ -11,6 +11,6 @@ class CacheConf(TypedDict):
 
     ttl: float | timedelta | str | None
     max_entries: int | None
-    show_spinner: bool | str
+    # show_spinner: bool | str # TODO: see if we can / should support this
     persist: CachePersistType | bool | None
     hash_funcs: HashFuncsDict | None

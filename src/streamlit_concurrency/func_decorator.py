@@ -1,5 +1,5 @@
-from click import Option
 import streamlit as st
+import functools
 from concurrent.futures import Executor
 from streamlit.runtime.caching.hashing import HashFuncsDict
 import concurrent.futures as cf
@@ -10,15 +10,13 @@ from typing import (
     TypeVar,
     Callable,
     ParamSpec,
-    TypedDict,
-    Unpack,
-    Any,
+    overload,
 )
 import asyncio
 import contextlib
-from streamlit.runtime.scriptrunner import ScriptRunContext
+import logging
 from ._func_util import (
-    assert_is_async,
+    dump_func_metadata,
     assert_is_sync,
     assert_st_script_run_ctx,
     create_script_run_context_cm,
@@ -30,11 +28,23 @@ from ._executors import _get_thread_pool_executor, _get_process_pool_executor
 R = TypeVar("R")
 P = ParamSpec("P")
 
+logger = logging.getLogger(__name__)
+
+
+# @overload
+# def wrap_sync(
+#     cache: Optional[CacheConf | dict] = None,
+#     executor: Executor | Literal["thread_pool", "process_pool"] = "thread_pool",
+#     with_script_run_context: bool = False,
+#     async_=True,
+# ) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]: ...
+
 
 def wrap_sync(
     cache: Optional[CacheConf | dict] = None,
     executor: Executor | Literal["thread_pool", "process_pool"] = "thread_pool",
     with_script_run_context: bool = False,
+    async_=False,
 ) -> Callable[[Callable[P, R]], Callable[P, Awaitable[R]]]:
     """Transforms a sync function to run in executor and return result as Awaitable
 
@@ -64,6 +74,8 @@ def wrap_sync(
     def decorator(func: Callable):
         assert_is_sync(func)
 
+        dump_func_metadata(func)
+
         def wrapper(*args, **kwargs):
             # a wrapper that
             # 1. capture possible ScriptRunContext
@@ -75,6 +87,7 @@ def wrap_sync(
                 cm = contextlib.nullcontext()
 
             def func_for_executor():
+                # NOTE: need to make sure this works with other executors
                 with cm:
                     if cache is not None:
                         # st.cache_data needs the real user function
@@ -88,7 +101,7 @@ def wrap_sync(
             future = executor.submit(func_for_executor)
             return asyncio.wrap_future(future)
 
-        return wrapper
+        return functools.update_wrapper(wrapper, func)
 
     return decorator
 
@@ -102,16 +115,4 @@ def wrap_future(
     copy_script_run_context: bool = False,
 ) -> Callable[[Callable[P, R]], Callable[P, cf.Future[R]]]:
     """Transforms a sync function into a sync function running in , with st helpers"""
-    raise NotImplementedError
-
-
-def wrap_async(
-    cache_key: str | None = None,
-    cache_storage: str | None = None,
-    cache_ttl: int | None = None,
-    hash_funcs: HashFuncsDict | None = None,
-    executor: Executor | None = None,
-    copy_script_run_context: bool = False,
-) -> Callable[[Callable[P, R]], Callable[P, R]]:
-    """XXX: is this ever necessary?"""
     raise NotImplementedError

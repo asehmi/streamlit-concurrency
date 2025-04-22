@@ -1,6 +1,8 @@
 import inspect
 import contextlib
 import threading
+import logging
+from typing import Callable
 
 from streamlit.runtime.scriptrunner import (
     get_script_run_ctx,
@@ -10,6 +12,8 @@ from streamlit.runtime.scriptrunner import (
 from streamlit.runtime.scriptrunner_utils.script_run_context import (
     SCRIPT_RUN_CONTEXT_ATTR_NAME,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def assert_st_script_run_ctx(target="This function") -> ScriptRunContext:
@@ -56,3 +60,17 @@ def create_script_run_context_cm(script_run_ctx: ScriptRunContext):
     # restore the original context, whether it was None or not (this can't be done with add_script_run_ctx)
     setattr(threading.current_thread(), SCRIPT_RUN_CONTEXT_ATTR_NAME, existing_ctx)
     assert get_script_run_ctx(suppress_warning=True) is existing_ctx
+
+
+def dump_func_metadata(func: Callable):
+    logger.warning(
+        "function metadata: %s %s %s %s",
+        func.__module__,
+        func.__name__,
+        func.__qualname__,
+        func.__code__,
+    )
+    logger.warning(
+        "getsource: %s",
+        inspect.getsource(func),
+    )
