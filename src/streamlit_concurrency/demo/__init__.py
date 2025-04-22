@@ -1,3 +1,4 @@
+import logging
 import streamlit as st
 import numpy as np
 import time
@@ -6,6 +7,8 @@ import asyncio
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).parent.parent.parent.parent
+
+logger = logging.getLogger(__name__)
 
 
 def read_repo_file(file_path: str) -> str:
