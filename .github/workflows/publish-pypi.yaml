@@ -16,5 +16,12 @@ jobs:
     steps:
     # retrieve your distributions here
 
-    - name: Publish package distributions to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+    - uses: actions/setup-python@v5
+      with:
+        python-version-file: "pyproject.toml"
+
+    - name: Install pypa/build
+      run: |
+        python3 -m pip install build --user
+
+    - uses: pypa/gh-action-pypi-publish@release/v1
