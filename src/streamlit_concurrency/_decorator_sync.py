@@ -13,7 +13,7 @@ import asyncio
 import contextlib
 import logging
 from ._func_util import (
-    assert_is_sync,
+    assert_is_transformable_sync,
     assert_st_script_run_ctx,
     create_script_run_context_cm,
     debug_enter_exit,
@@ -47,7 +47,7 @@ def transform_sync(
     @return: an async function
 
     """
-    assert_is_sync(func)
+    assert_is_transformable_sync(func)
 
     if isinstance(executor, str):
         executor = get_executor(executor)
@@ -64,7 +64,7 @@ def transform_sync(
     # dump_func_metadata(func)
     # dump_func_code("wrap_sync", func)
 
-    async def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs) -> R:
         # a wrapper that
         # 1. capture possible ScriptRunContext
         # 2. run decorated `func` in executor, with the ScriptRunContext context-managed
@@ -76,6 +76,7 @@ def transform_sync(
         else:
             cm = contextlib.nullcontext()
 
+        # a sync function to do real work in the executor
         def run_in_executor(*args_, **kwargs_):
             # NOTE: need to make sure this works with other executors
             if cache is None:
@@ -90,15 +91,15 @@ def transform_sync(
             # NOTE st.cache_data needs the provided user function
             # internally it creates cache key for the function from __module__ __qualname__ __code__ etc
             with cm:
-                # NOTE the order matters. st.cache_data requires ScriptRunContext too (maybe only when show_spinner=True)
+                # NOTE st.cache_data requires ScriptRunContext too (maybe only when show_spinner=True)
                 # TODO: validate this and TEST
                 func_with_cache = st.cache_data(func, **cache)
-                with debug_enter_exit(
-                    logger,
-                    f"executing cached {func.__name__}",
-                    f"executed cached {func.__name__}",
-                ):
-                    return func_with_cache(*args_, **kwargs_)
+            with debug_enter_exit(
+                logger,
+                f"executing cached {func.__name__}",
+                f"executed cached {func.__name__}",
+            ):
+                return func_with_cache(*args_, **kwargs_)
 
         future = executor.submit(run_in_executor, *args, **kwargs)
         return await asyncio.wrap_future(future)

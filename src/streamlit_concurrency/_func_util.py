@@ -30,18 +30,26 @@ def assert_st_script_run_ctx(callee: str) -> ScriptRunContext:
     return ctx
 
 
-def assert_is_async(func):
+def assert_is_transformable_async(func):
     """Asserts that the given function is an async function."""
-    if not (callable(func) and inspect.iscoroutinefunction(func)):
-        raise TypeError(f"Expected an async function, got {func}")
-    return func
+    if not callable(func):
+        raise TypeError(f"Expected a callable, got {func}.")
+    if not inspect.iscoroutinefunction(func):
+        # Check if the function is a coroutine function
+        raise TypeError(f"Expected an async function, got {func.__code__}.")
+    if inspect.isasyncgenfunction(func):
+        raise TypeError(f"Expected an non-generator function, got {func.__code__}.")
 
 
-def assert_is_sync(func):
+def assert_is_transformable_sync(func):
     """Asserts that the given function is an async function."""
-    if not (callable(func) and not inspect.iscoroutinefunction(func)):
-        raise TypeError(f"Expected an sync function, got {func}")
-    return func
+    if not callable(func):
+        raise TypeError(f"Expected a callable, got {func}.")
+    if inspect.iscoroutinefunction(func):
+        # Check if the function is a coroutine function
+        raise TypeError(f"Expected a sync function, got {func.__code__}.")
+    if inspect.isgeneratorfunction(func):
+        raise TypeError(f"Expected an non-generator function, got {func.__code__}.")
 
 
 def _format_script_run_ctx(ctx: Optional[ScriptRunContext]):
