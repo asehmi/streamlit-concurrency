@@ -3,6 +3,7 @@ import functools
 import concurrent.futures as cf
 from typing import (
     Awaitable,
+    Coroutine,
     Literal,
     Optional,
     TypeVar,
@@ -32,7 +33,7 @@ def transform_sync(
     cache: Optional[CacheConf | dict] = None,
     executor: cf.Executor | Literal["thread", "process"] = "thread",
     with_script_run_context: bool = False,
-) -> Callable[P, Awaitable[R]]:
+) -> Callable[P, Coroutine[None, None, R]]:
     """Transforms a sync function to run in executor and return result as Awaitable
 
     @param cache: configuration to pass to st.cache_data()

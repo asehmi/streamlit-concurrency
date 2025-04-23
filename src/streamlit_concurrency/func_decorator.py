@@ -29,17 +29,20 @@ class FuncDecorator:
         self.__executor = executor
         self.__with_script_run_context = with_script_run_context
 
-    @overload
+    @overload  # for async function
     def __call__(
         self,
-        func: Union[Callable[P, Awaitable[R]], Callable[P, Coroutine[None, None, R]]],
-    ) -> Callable[P, Awaitable[R]]: ...
+        func: Union[
+            Callable[P, Awaitable[R]],
+            Callable[P, Coroutine[None, None, R]],
+        ],
+    ) -> Callable[P, Coroutine[None, None, R]]: ...
 
-    @overload
+    @overload  # for sync function
     def __call__(
         self,
         func: Callable[P, R],
-    ) -> Callable[P, Awaitable[R]]: ...
+    ) -> Callable[P, Coroutine[None, None, R]]: ...
 
     def __call__(self, func):
         assert callable(func), "expected a Callable"

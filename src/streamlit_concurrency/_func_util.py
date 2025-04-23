@@ -6,6 +6,7 @@ import logging
 from typing import Callable, Optional
 import os
 import time
+from ._errors import UnsupportedFunction, UnsupportedCallSite
 
 
 from streamlit.runtime.scriptrunner import (
@@ -24,7 +25,7 @@ def assert_st_script_run_ctx(callee: str) -> ScriptRunContext:
     """Assert that the current thread is the script thread."""
     ctx = get_script_run_ctx(suppress_warning=True)
     if ctx is None:
-        raise RuntimeError(
+        raise UnsupportedCallSite(
             f"{callee} must be called in a thread with ScriptRunContext. Typically a thread streamlit created to run a page."
         )
     return ctx
@@ -33,23 +34,27 @@ def assert_st_script_run_ctx(callee: str) -> ScriptRunContext:
 def assert_is_transformable_async(func):
     """Asserts that the given function is an async function."""
     if not callable(func):
-        raise TypeError(f"Expected a callable, got {func}.")
+        raise UnsupportedFunction(f"Expected a callable, got {func}.")
     if not inspect.iscoroutinefunction(func):
         # Check if the function is a coroutine function
-        raise TypeError(f"Expected an async function, got {func.__code__}.")
+        raise UnsupportedFunction(f"Expected an async function, got {func.__code__}.")
     if inspect.isasyncgenfunction(func):
-        raise TypeError(f"Expected an non-generator function, got {func.__code__}.")
+        raise UnsupportedFunction(
+            f"Expected an non-generator function, got {func.__code__}."
+        )
 
 
 def assert_is_transformable_sync(func):
     """Asserts that the given function is an async function."""
     if not callable(func):
-        raise TypeError(f"Expected a callable, got {func}.")
+        raise UnsupportedFunction(f"Expected a callable, got {func}.")
     if inspect.iscoroutinefunction(func):
         # Check if the function is a coroutine function
-        raise TypeError(f"Expected a sync function, got {func.__code__}.")
+        raise UnsupportedFunction(f"Expected a sync function, got {func.__code__}.")
     if inspect.isgeneratorfunction(func):
-        raise TypeError(f"Expected an non-generator function, got {func.__code__}.")
+        raise UnsupportedFunction(
+            f"Expected an non-generator function, got {func.__code__}."
+        )
 
 
 def _format_script_run_ctx(ctx: Optional[ScriptRunContext]):
