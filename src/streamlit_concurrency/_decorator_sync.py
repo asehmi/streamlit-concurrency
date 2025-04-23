@@ -28,31 +28,28 @@ P = ParamSpec("P")
 logger = logging.getLogger(__name__)
 
 
-# @overload
-# def wrap_sync(
-#     cache: Optional[CacheConf | dict] = None,
-#     executor: Executor | Literal["thread_pool", "process_pool"] = "thread_pool",
-#     with_script_run_context: bool = False,
-#     async_=True,
-# ) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]: ...
-
-
-def wrap_sync(
+def transform_sync(
+    func: Callable[P, R],
     cache: Optional[CacheConf | dict] = None,
     executor: cf.Executor | Literal["thread", "process"] = "thread",
     with_script_run_context: bool = False,
-) -> Callable[[Callable[P, R]], Callable[P, Awaitable[R]]]:
+) -> Callable[P, Awaitable[R]]:
     """Transforms a sync function to run in executor and return result as Awaitable
 
     @param cache: configuration to pass to st.cache_data()
 
-    @param executor: executor to run the function in, can be 'thread_pool', 'process_pool' or an concurrent.futures.Executor
+    @param executor: executor to run the function in
 
-    @param with_script_run_context: if True, the function will be run with a ScriptRunContext. Must be used with a ThreadPoolExecutor.
+    @param with_script_run_context: if True, the thread running provided function will be run with a ScriptRunContext.
 
     See [multithreading](https://docs.streamlit.io/develop/concepts/design/multithreading) for possible motivation and consequences.
+    This option must be used with a ThreadPoolExecutor.
+
+    @return: an async function
 
     """
+    assert_is_sync(func)
+
     if isinstance(executor, str):
         executor = get_executor(executor)
     if not isinstance(executor, cf.Executor):
@@ -65,37 +62,35 @@ def wrap_sync(
             "with_script_run_context=True can only be used with a ThreadPoolExecutor"
         )
 
-    def decorator(func: Callable):
-        assert_is_sync(func)
+    # dump_func_metadata(func)
+    # dump_func_code("wrap_sync", func)
 
-        dump_func_metadata(func)
-        dump_func_code("wrap_sync", func)
+    def wrapper(*args, **kwargs):
+        # a wrapper that
+        # 1. capture possible ScriptRunContext
+        # 2. run decorated `func` in executor, with a context-managed ScriptRunContext
+        # 3. return a Awaitable
+        if with_script_run_context:
+            cm = create_script_run_context_cm(
+                assert_st_script_run_ctx(f"<@run_in_executor(...) def {func.__name__}>")
+            )
+        else:
+            cm = contextlib.nullcontext()
 
-        def wrapper(*args, **kwargs):
-            # a wrapper that
-            # 1. capture possible ScriptRunContext
-            # 2. run decorated `func` in executor, with a context-managed ScriptRunContext
-            # 3. return a Awaitable
-            if with_script_run_context:
-                cm = create_script_run_context_cm(assert_st_script_run_ctx())
-            else:
-                cm = contextlib.nullcontext()
-
-            def func_for_executor(*args_, **kwargs_):
-                # NOTE: need to make sure this works with other executors
+        def run_in_executor(*args_, **kwargs_):
+            # NOTE: need to make sure this works with other executors
+            # NOTE st.cache_data requires ScriptRunContext too (maybe only when show_spinner=True) # TODO: validate this and TEST
+            with cm:
                 if cache is not None:
-                    # st.cache_data needs the real user function
-                    # its cache key depends on code position and code text
+                    # NOTE st.cache_data needs the provided user function
+                    # internally it creates cache key for the function from __module__ __qualname__ __code__ etc
                     real_func = st.cache_data(func, **cache)
                 else:
                     real_func = func
 
-                with cm:
-                    return real_func(*args_, **kwargs_)
+                return real_func(*args_, **kwargs_)
 
-            future = executor.submit(func_for_executor, *args, **kwargs)
-            return asyncio.wrap_future(future)
+        future = executor.submit(run_in_executor, *args, **kwargs)
+        return asyncio.wrap_future(future)
 
-        return functools.update_wrapper(wrapper, func)
-
-    return decorator
+    return functools.update_wrapper(wrapper, func)

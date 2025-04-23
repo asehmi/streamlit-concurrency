@@ -40,6 +40,7 @@ def create_log_record_sink(
     yield records, lines
 
     log_src.removeHandler(handler)
+    handler.close()
 
 
 def test_log_sink():

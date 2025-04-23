@@ -3,8 +3,7 @@ import asyncio
 import contextlib
 import threading
 import logging
-from typing import Callable
-import sys
+from typing import Callable, Optional
 import os
 
 
@@ -20,12 +19,12 @@ from streamlit.runtime.scriptrunner_utils.script_run_context import (
 logger = logging.getLogger(__name__)
 
 
-def assert_st_script_run_ctx(target="This function") -> ScriptRunContext:
+def assert_st_script_run_ctx(callee: str) -> ScriptRunContext:
     """Assert that the current thread is the script thread."""
     ctx = get_script_run_ctx(suppress_warning=True)
     if ctx is None:
         raise RuntimeError(
-            f"{target} must be called in a thread with ScriptRunContext. Typically a ScriptThread running page code."
+            f"{callee} must be called in a thread with ScriptRunContext. Typically a thread streamlit created to run a page."
         )
     return ctx
 
@@ -44,37 +43,52 @@ def assert_is_sync(func):
     return func
 
 
+def _format_script_run_ctx(ctx: Optional[ScriptRunContext]):
+    return (
+        f"ScriptRunContext(session={ctx.session_id}, page_script_hash={ctx.page_script_hash})"
+        if ctx
+        else None
+    )
+
+
 @contextlib.contextmanager
-def create_script_run_context_cm(script_run_ctx: ScriptRunContext):
+def create_script_run_context_cm(ctx: ScriptRunContext):
     """Create a context manager that
 
-    - when entering, adds given script_run_ctx to the current thread
-    - when exiting, un-adds it from current thread
+    - when enter, adds given script_run_ctx to the current thread
+    - when exit, un-adds it from current thread
     """
     existing_ctx = get_script_run_ctx(suppress_warning=True)
+    existing_ctx_repr = _format_script_run_ctx(existing_ctx)
 
-    if existing_ctx is not None and existing_ctx is not script_run_ctx:
+    ctx_repr = _format_script_run_ctx(ctx)
+    if existing_ctx is not None and existing_ctx is not ctx:
         raise RuntimeError(
             f"Current thread {threading.current_thread().name} had an unexpected ScriptRunContext: {existing_ctx}."
         )
 
-    add_script_run_ctx(thread=threading.current_thread(), ctx=script_run_ctx)
+    add_script_run_ctx(thread=threading.current_thread(), ctx=ctx)
+    logger.debug(
+        "Attached captured ScriptRunContext %s . Current thread had %s .",
+        ctx_repr,
+        existing_ctx_repr,
+    )
     yield
 
-    # restore the original context, whether it was None or not (this can't be done with add_script_run_ctx)
+    # restore the original value, whether it was None or not (this can't be done with add_script_run_ctx)
     setattr(threading.current_thread(), SCRIPT_RUN_CONTEXT_ATTR_NAME, existing_ctx)
     assert get_script_run_ctx(suppress_warning=True) is existing_ctx
+    logger.debug("Restored to original ScriptRunContext %s", existing_ctx_repr)
 
 
 def dump_func_metadata(func: Callable):
-    return
-    logger.warning(
+    logger.debug(
         "function metadata: %s %s %s",
         func.__module__,
         func.__name__,
         func.__qualname__,
     )
-    logger.warning(
+    logger.debug(
         "getsource: %s",
         inspect.getsource(func),
     )
@@ -104,3 +118,10 @@ def async_to_sync(async_fun):
         return asyncio.run(async_fun(*args, **kwargs))
 
     return sync_fun
+
+
+@contextlib.contextmanager
+def debug_enter_exit(logger_: logging.Logger, enter_msg: str, exit_msg):
+    logger_.debug(enter_msg)
+    yield
+    logger_.debug(exit_msg)

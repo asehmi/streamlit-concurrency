@@ -1,19 +1,28 @@
 import functools
 import concurrent.futures as cf
 from typing import Literal
+from ._func_util import debug_enter_exit
+import threading
 
-# TODO this should be lazy inited
-# TODO initialization should be mutex-protected
+import logging
+
+logger = logging.getLogger(__name__)
+
+# just to be safe
+_get_executor_lock = threading.Lock()
 
 
 @functools.lru_cache(maxsize=1)
 def _get_thread_pool_executor() -> cf.Executor:
-    return cf.ThreadPoolExecutor(thread_name_prefix="streamlit-concurrency-")
+    with debug_enter_exit(
+        logger, "Creating ThreadPoolExecutor", "Created ThreadPoolExecutor"
+    ):
+        return cf.ThreadPoolExecutor(thread_name_prefix="streamlit-concurrency-")
 
 
 @functools.lru_cache(maxsize=1)
 def _get_process_pool_executor() -> cf.Executor:
-    return cf.ProcessPoolExecutor()
+    raise NotImplementedError
 
 
 @functools.lru_cache(maxsize=1)
@@ -24,20 +33,19 @@ def _get_interpreter_pool_executor() -> cf.Executor:
 
 @functools.lru_cache(maxsize=1)
 def _get_multiprocess_executor() -> cf.Executor:
-    raise NotImplementedError(
-        "Multiprocess executor is not implemented yet. Please use thread or process executor instead."
-    )
+    raise NotImplementedError
 
 
 def get_executor(
     executor_type: Literal["thread", "process", "interpreter"],
 ) -> cf.Executor:
     """Get the executor based on the type."""
-    if executor_type == "thread":
-        return _get_thread_pool_executor()
-    elif executor_type == "process":
-        return _get_process_pool_executor()
-    elif executor_type == "interpreter":
-        return _get_interpreter_pool_executor()
-    else:
-        raise ValueError(f"Unknown executor type: {executor_type}")
+    with _get_executor_lock:
+        if executor_type == "thread":
+            return _get_thread_pool_executor()
+        elif executor_type == "process":
+            return _get_process_pool_executor()
+        elif executor_type == "interpreter":
+            return _get_interpreter_pool_executor()
+        else:
+            raise ValueError(f"Unknown executor type: {executor_type}")

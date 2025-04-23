@@ -14,8 +14,8 @@ from typing import (
     overload,
 )
 from ._func_cache import CacheConf
-from ._decorator_async import wrap_async
-from ._decorator_sync import wrap_sync
+from ._decorator_async import transform_async
+from ._decorator_sync import transform_sync
 
 R = TypeVar("R")
 P = ParamSpec("P")
@@ -50,17 +50,19 @@ class FuncDecorator:
             func
         ), "expected a non-generator Cunction"
         if inspect.iscoroutinefunction(func):
-            return wrap_async(
+            return transform_async(
+                func,
                 cache=self.__cache,
                 executor=self.__executor,
                 with_script_run_context=self.__with_script_run_context,
-            )(func)
+            )
         else:
-            return wrap_sync(
+            return transform_sync(
+                func,
                 cache=self.__cache,
                 executor=self.__executor,
                 with_script_run_context=self.__with_script_run_context,
-            )(func)
+            )
 
 
 def run_in_executor(

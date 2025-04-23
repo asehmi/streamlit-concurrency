@@ -31,11 +31,12 @@ R = TypeVar("R")
 P = ParamSpec("P")
 
 
-def wrap_async(
+def transform_async(
+    func: Callable[P, Awaitable[R]],
     cache: Optional[CacheConf | dict] = None,
     executor: Executor | Literal["thread", "process"] = "thread",
     with_script_run_context: bool = False,
-) -> Callable[[Callable[P, Awaitable[R]]], Callable[P, Awaitable[R]]]:
+) -> Callable[P, Awaitable[R]]:
     assert executor == "thread"
     if isinstance(executor, str):
         executor = get_executor(executor)
@@ -43,44 +44,45 @@ def wrap_async(
         raise ValueError(
             f"executor must be 'thread', 'process' or an instance of concurrent.futures.Executor, got {executor}"
         )
-    threaded_executor = executor
+    assert_is_async(func)
+    reaper_executor = get_executor("thread")
 
-    def decorator(func: Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
-        assert_is_async(func)
+    # dump_func_metadata(func)
+    # dump_func_code("wrap_async-func", func)
 
-        dump_func_metadata(func)
-        dump_func_code("wrap_async-func", func)
+    def wrapper(*args, **kwargs) -> Awaitable[R]:
+        if with_script_run_context:
+            cm = create_script_run_context_cm(
+                assert_st_script_run_ctx(
+                    f"<@run_in_executor(...) async def {func.__name__}>"
+                )
+            )
+        else:
+            cm = contextlib.nullcontext()
 
-        def wrapper(*args, **kwargs) -> Awaitable[R]:
-            if with_script_run_context:
-                cm = create_script_run_context_cm(assert_st_script_run_ctx())
-            else:
-                cm = contextlib.nullcontext()
+        # the sync function to run in the executor
+        def dispatched(*args, **kwargs) -> R:
+            f"""dispatched for {func.__code__}"""
+            with cm:
+                return async_to_sync(func)(*args, **kwargs)
 
-            # the sync function to run in the executor
-            def dispatched(*args, **kwargs) -> R:
-                with cm:
-                    return async_to_sync(func)(*args, **kwargs)
+        # the sync function that return the result without unpickable container like cf Task/Future or asyncio Task / Future
+        def dispatch_and_wait(*args, **kwargs) -> R:
+            f"""{func.__name__} {func.__code__}"""
+            return executor.submit(dispatched, *args, **kwargs).result()
 
-            # the sync function that return the result without unpickable container like cf Task/Future or asyncio Task / Future
-            def dispatch_and_wait(*args, **kwargs) -> R:
-                f"""{func.__name__} {func.__code__}"""
-                return executor.submit(dispatched, *args, **kwargs).result()
+        dispatch_and_wait = functools.update_wrapper(dispatch_and_wait, func)
 
-            dispatch_and_wait = functools.update_wrapper(dispatch_and_wait, func)
+        # dump_func_code("wrap_async-dispatch", dispatch_and_wait)
 
-            dump_func_code("wrap_async-dispatch", dispatch_and_wait)
+        if cache is not None:
+            # st.cache_data needs the real user function
+            # its cache key depends on code position and code text
+            real_func = st.cache_data(dispatch_and_wait, **cache)
+        else:
+            real_func = dispatch_and_wait
 
-            if cache is not None:
-                # st.cache_data needs the real user function
-                # its cache key depends on code position and code text
-                real_func = st.cache_data(dispatch_and_wait, **cache)
-            else:
-                real_func = dispatch_and_wait
+        future = reaper_executor.submit(real_func, *args, **kwargs)
+        return asyncio.wrap_future(future)
 
-            future = executor.submit(real_func, *args, **kwargs)
-            return asyncio.wrap_future(future)
-
-        return wrapper
-
-    return decorator
+    return wrapper
