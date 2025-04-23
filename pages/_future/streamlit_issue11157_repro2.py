@@ -1,3 +1,5 @@
+"""Reproduction for "altering clsoure-capured variable" case in https://github.com/streamlit/streamlit/issues/11157"""
+
 import streamlit as st
 
 free_variable = 0
@@ -12,7 +14,7 @@ cached = st.cache_data(uncached)
 
 param_value = st.number_input("param", value=0, step=1)
 
-run = st.button("set free_variable and call")
+run = st.button(f"alter free_variable to {param_value} and call")
 
 if run:
     free_variable = param_value

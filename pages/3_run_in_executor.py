@@ -12,27 +12,23 @@ run_clicked = st.button("Run main()")
 
 
 @run_in_executor(
-    # cache={"ttl": 3},
-    with_script_run_context=True,
+    cache={"ttl": 3},
+    with_script_run_context=False,
 )
 def cached_sync():
     now = datetime.datetime.now()
-    dest.write(
-        f"{now}: {cached_sync.__name__}() running in {threading.current_thread().name}"
-    )
+    # dest.write( f"{now}: {cached_sync.__name__}() running in {threading.current_thread().name}")
     return now
 
 
 @run_in_executor(
-    # cache={"ttl": 5},
-    with_script_run_context=True,
+    cache={"ttl": 5},
+    with_script_run_context=False,
 )
 async def cached_async1():
     await asyncio.sleep(1)
     now = datetime.datetime.now()
-    dest.write(
-        f"{now}: {cached_async1.__name__}() running in {threading.current_thread().name}"
-    )
+    # dest.write( f"{now}: {cached_async1.__name__}() running in {threading.current_thread().name}")
     await asyncio.sleep(1)
     return now
 
