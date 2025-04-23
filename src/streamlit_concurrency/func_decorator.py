@@ -1,9 +1,6 @@
-import concurrent.futures as cf
-import asyncio
 import inspect
 from typing import (
     Awaitable,
-    Never,
     Callable,
     Literal,
     Optional,
@@ -72,6 +69,8 @@ def run_in_executor(
     executor: Literal["thread", "process"] = "thread",
     with_script_run_context: bool = False,
 ) -> FuncDecorator:
+    if executor != "thread":
+        raise NotImplementedError("Executors other than 'thread' is not supported yet.")
     return FuncDecorator(
         cache=cache, executor=executor, with_script_run_context=with_script_run_context
     )

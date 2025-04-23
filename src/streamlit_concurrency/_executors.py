@@ -17,7 +17,7 @@ def _get_thread_pool_executor() -> cf.Executor:
     with debug_enter_exit(
         logger, "Creating ThreadPoolExecutor", "Created ThreadPoolExecutor"
     ):
-        return cf.ThreadPoolExecutor(thread_name_prefix="streamlit-concurrency-")
+        return cf.ThreadPoolExecutor(thread_name_prefix="streamlit-concurrency")
 
 
 @functools.lru_cache(maxsize=1)
