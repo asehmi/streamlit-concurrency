@@ -5,6 +5,7 @@ import threading
 import logging
 from typing import Callable, Optional
 import os
+import time
 
 
 from streamlit.runtime.scriptrunner import (
@@ -122,6 +123,8 @@ def async_to_sync(async_fun):
 
 @contextlib.contextmanager
 def debug_enter_exit(logger_: logging.Logger, enter_msg: str, exit_msg):
+    enter_at = time.time()
     logger_.debug(enter_msg)
     yield
-    logger_.debug(exit_msg)
+    exit_at = time.time()
+    logger_.debug(exit_msg + " (took %.2f seconds)", exit_at - enter_at)

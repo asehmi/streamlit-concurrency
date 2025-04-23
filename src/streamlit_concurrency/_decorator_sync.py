@@ -13,11 +13,10 @@ import asyncio
 import contextlib
 import logging
 from ._func_util import (
-    dump_func_metadata,
-    dump_func_code,
     assert_is_sync,
     assert_st_script_run_ctx,
     create_script_run_context_cm,
+    debug_enter_exit,
 )
 from ._func_cache import CacheConf
 from ._executors import get_executor
@@ -65,10 +64,10 @@ def transform_sync(
     # dump_func_metadata(func)
     # dump_func_code("wrap_sync", func)
 
-    def wrapper(*args, **kwargs):
+    async def wrapper(*args, **kwargs):
         # a wrapper that
         # 1. capture possible ScriptRunContext
-        # 2. run decorated `func` in executor, with a context-managed ScriptRunContext
+        # 2. run decorated `func` in executor, with the ScriptRunContext context-managed
         # 3. return a Awaitable
         if with_script_run_context:
             cm = create_script_run_context_cm(
@@ -79,18 +78,29 @@ def transform_sync(
 
         def run_in_executor(*args_, **kwargs_):
             # NOTE: need to make sure this works with other executors
-            # NOTE st.cache_data requires ScriptRunContext too (maybe only when show_spinner=True) # TODO: validate this and TEST
+            if cache is None:
+                with cm:
+                    with debug_enter_exit(
+                        logger,
+                        f"executing original {func.__name__}",
+                        f"executed original {func.__name__}",
+                    ):
+                        return func(*args_, **kwargs_)
+            # else: wrap with st.cache_data first
+            # NOTE st.cache_data needs the provided user function
+            # internally it creates cache key for the function from __module__ __qualname__ __code__ etc
             with cm:
-                if cache is not None:
-                    # NOTE st.cache_data needs the provided user function
-                    # internally it creates cache key for the function from __module__ __qualname__ __code__ etc
-                    real_func = st.cache_data(func, **cache)
-                else:
-                    real_func = func
-
-                return real_func(*args_, **kwargs_)
+                # NOTE the order matters. st.cache_data requires ScriptRunContext too (maybe only when show_spinner=True)
+                # TODO: validate this and TEST
+                func_with_cache = st.cache_data(func, **cache)
+                with debug_enter_exit(
+                    logger,
+                    f"executing cached {func.__name__}",
+                    f"executed cached {func.__name__}",
+                ):
+                    return func_with_cache(*args_, **kwargs_)
 
         future = executor.submit(run_in_executor, *args, **kwargs)
-        return asyncio.wrap_future(future)
+        return await asyncio.wrap_future(future)
 
     return functools.update_wrapper(wrapper, func)
