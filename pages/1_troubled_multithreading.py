@@ -3,6 +3,7 @@ import logging
 import threading
 import time
 import streamlit_concurrency.demo as demo
+from streamlit_concurrency.log_sink import create_log_sink
 
 st.markdown("""
 This page demostrates incorrect multithreading in streamlit.
@@ -51,7 +52,7 @@ class CustomThreadReadingSessionState(threading.Thread):
 
 
 # NOTE this does not capture errors
-with demo.create_log_record_sink(level=logging.DEBUG) as (records, lines):
+with create_log_sink(level=logging.DEBUG) as (records, lines):
     if update_widget_clicked:
         t = CustomThreadUpdatingWidget()
         t.start()
