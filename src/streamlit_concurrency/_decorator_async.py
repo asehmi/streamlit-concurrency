@@ -63,8 +63,6 @@ def transform_async(
             "with_script_run_context=True can only be used with a ThreadPoolExecutor"
         )
 
-    waiter_executor = get_executor("thread")
-
     async def wrapper(*args, **kwargs) -> R:
         if with_script_run_context:
             cm = create_script_run_context_cm(
@@ -75,16 +73,28 @@ def transform_async(
         else:
             cm = contextlib.nullcontext()
 
-        # the sync function to do real work in the executor, and in an 'clean' thread without an event loop
+        # the sync function dispath to the 'work' executor
         def run_in_executor(*args, **kwargs) -> R:
-            f"""dispatched for {func.__code__}"""
             with cm:
                 with debug_enter_exit(
                     logger,
                     f"executing original {func.__name__}",
                     f"executed original {func.__name__}",
                 ):
+                    # assumes a 'clean' thread without an event loop
                     return asyncio.run(func(*args, **kwargs))
+
+        # simpler case: similar to decorator_sync
+        if cache is None:
+            with debug_enter_exit(
+                logger,
+                f"start waiting for {func.__name__}",
+                f"finished waiting for {func.__name__}",
+            ):
+                return await asyncio.wrap_future(
+                    executor.submit(run_in_executor, *args, **kwargs)
+                )
+        # else: trick to cache
 
         def cachable_run_in_executor(*args, **kwargs) -> R:
             with debug_enter_exit(
@@ -92,7 +102,7 @@ def transform_async(
                 f"waiting for {run_in_executor.__name__} wrapping {func.__name__}",
                 f"waited for {run_in_executor.__name__} wrapping {func.__name__}",
             ):
-                return executor.submit(run_in_executor, *args, **kwargs).result()
+                return worker_executor.submit(run_in_executor, *args, **kwargs).result()
 
         # this hack is required for st.cache to create different cache key for each run_in_executor instance
         # see https://github.com/streamlit/streamlit/issues/11157
