@@ -21,6 +21,20 @@ def test_assertions():
         _prohibit_get_ctx()
 
 
-def test_prohibit(prohibit_get_ctx):
+def test_without_monkeypatch():
+    st_scriptrunner.get_script_run_ctx(suppress_warning=False)
+
+
+def test_stricter(stricter_get_run_ctx, stub_run_ctx_cm):
     with pytest.raises(UnsupportedCallSite):
         st_scriptrunner.get_script_run_ctx(suppress_warning=True)
+    with stub_run_ctx_cm:
+        st_scriptrunner.get_script_run_ctx(suppress_warning=True)
+
+
+def test_prohibit(prohibit_get_run_ctx, stub_run_ctx_cm):
+    with pytest.raises(UnsupportedCallSite):
+        st_scriptrunner.get_script_run_ctx(suppress_warning=True)
+    with stub_run_ctx_cm:
+        with pytest.raises(UnsupportedCallSite):
+            st_scriptrunner.get_script_run_ctx(suppress_warning=True)

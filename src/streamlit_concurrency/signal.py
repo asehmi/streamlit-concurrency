@@ -1,5 +1,7 @@
 import streamlit as st
-from streamlit.runtime.scriptrunner import add_script_run_ctx, get_script_run_ctx
+import streamlit.runtime.scriptrunner as st_scriptrunner
+
+raise NotImplementedError
 
 
 class PageRunSignal:
