@@ -84,26 +84,27 @@ def transform_sync(
         def run_in_executor(*args, **kwargs) -> R:
             # NOTE: need to make sure this works with other executors
             if cache is None:
-                with cm:
-                    with debug_enter_exit(
-                        logger,
-                        f"executing original {func.__name__}",
-                        f"executed original {func.__name__}",
-                    ):
+                with debug_enter_exit(
+                    logger,
+                    f"executing original {func.__name__}",
+                    f"executed original {func.__name__}",
+                ):
+                    with cm:
                         return func(*args, **kwargs)
             # else: wrap with st.cache_data first
 
             # NOTE st.cache_data needs the provided user function
             # internally it creates cache key for the function from __module__ __qualname__ __code__ etc
 
-            # NOTE cm is not required when show_spinner=False
+            # NOTE cm is not required to call st.cache_data when show_spinner=False
             func_with_cache = st.cache_data(func, **{**cache, "show_spinner": False})
             with debug_enter_exit(
                 logger,
                 f"executing cached {func.__name__}",
                 f"executed cached {func.__name__}",
             ):
-                return func_with_cache(*args, **kwargs)
+                with cm:
+                    return func_with_cache(*args, **kwargs)
 
         future = executor.submit(run_in_executor, *args_, **kwargs_)
         return await asyncio.wrap_future(future)

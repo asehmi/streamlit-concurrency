@@ -4,7 +4,10 @@ import time
 import logging
 import asyncio
 import streamlit_concurrency as stc
+from streamlit_concurrency.log_sink import create_log_sink
 import streamlit_concurrency.demo as stc_demo
+
+logger = logging.getLogger(__name__)
 
 SESSION_STATE_KEY = f"{__file__} / session_state"
 
@@ -27,6 +30,7 @@ session_state is {value}
 Widget updated by {read_session_state_and_update_widget.__name__}
 """
     )
+    logger.info("running")
     time.sleep(2)
     result_placeholder.code(
         f"{read_session_state_and_update_widget.__name__} finished in thread {threading.current_thread().name}"
@@ -35,11 +39,13 @@ Widget updated by {read_session_state_and_update_widget.__name__}
 
 async def main():
     log_placeholder.code("capturing logs...")
-    with stc_demo.create_log_record_sink(logging.DEBUG) as (records, lines):
-        if run:
-            await read_session_state_and_update_widget()
-    log_placeholder.code(
-        "\n".join(["logs captured during page run", ""] + lines), wrap_lines=True
+    await asyncio.gather(
+        stc_demo.capture_logs_render_df(
+            log_placeholder,
+            duration=5,
+            update_interval=0.1,
+        ),
+        read_session_state_and_update_widget(),
     )
 
 

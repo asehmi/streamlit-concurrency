@@ -1,66 +1,61 @@
-import datetime
-import asyncio
 import streamlit as st
-import threading
+
+st.set_page_config(layout="wide")
+
+st.markdown("""
+# `run_in_executor` decorator
+
+`run_in_executor` is a decorator to transform functions and run them concurrently.
+
+## Usage
+
+```py
+import streamit as st
 from streamlit_concurrency import run_in_executor
-from streamlit_concurrency.demo import render_page_src
+import asyncio
 
-
-dest = st.container()
-
-run_clicked = st.button("Run main()")
-
+# transform sync or async function with it
+# both sync or async function gets transformed into async function
+@run_in_executor(
+    cache={'ttl': 1},
+    with_script_run_context=True)
+def my_sync_func():
+    return 'from_sync_func'
 
 @run_in_executor(
-    cache={"ttl": 3},
-    with_script_run_context=False,
-)
-def cached_sync():
-    now = datetime.datetime.now()
-    # dest.write( f"{now}: {cached_sync.__name__}() running in {threading.current_thread().name}")
-    return now
+    cache={'ttl': 1},
+    with_script_run_context=False)
+async def my_async_func():
+    return 'from_async_func'
 
 
-@run_in_executor(
-    cache={"ttl": 5},
-    with_script_run_context=False,
-)
-async def cached_async1():
-    await asyncio.sleep(1)
-    now = datetime.datetime.now()
-    # dest.write( f"{now}: {cached_async1.__name__}() running in {threading.current_thread().name}")
-    await asyncio.sleep(1)
-    return now
-
-
-@run_in_executor(
-    # cache={"ttl": 5},
-    with_script_run_context=True,
-)
-async def cached_async2():
-    await asyncio.sleep(1)
-    now = datetime.datetime.now()
-    dest.write(
-        f"{now}: {cached_async2.__name__}() running in {threading.current_thread().name}"
+# now they can run concurrently
+async def page_main():
+    ret1, ret2 = await asyncio.gather(
+        await my_sync_func()
+        await my_async_func()
     )
-    await asyncio.sleep(1)
-    return now
+    st.write((ret1, ret2))
 
+asyncio.run(page_main())
+```
 
-async def main():
-    sync_result, async1_result, async2_result = await asyncio.gather(
-        cached_sync(), cached_async1(), cached_async2()
-    )
-    dest.write(f"{cached_sync.__name__}() returned {sync_result}")
-    dest.write(f"{cached_async1.__name__}() returned {async1_result}")
-    dest.write(f"{cached_async2.__name__}() returned {async2_result}")
-    dest.write(
-        f"{datetime.datetime.now()}: main() done in script thread {threading.current_thread().name}"
-    )
+## Params
 
+- `cache`: a dict of params to [`st.cache_data`](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.cache_data). Defaults to `None` for no cache.
+    - Internally it does use `st.cache_data`. All its params except `show_spinner` are supported.
+- `with_script_run_context`: When true, pass ScriptRunContext to executor and enable use streamlit APIs from other thread. Defaults to `False`.
+    - When this is enabled, the transformed function must be called from a thread containing a ScriptRunContext (typically the thread running a page)
+    - See [multithreading](https://docs.streamlit.io/develop/concepts/design/multithreading) for more details about `ScriptRunContext`.
 
-if __name__ == "__main__" and run_clicked:
-    asyncio.run(main())
+""")
 
+st.markdown(
+    """
+## Running example
 
-render_page_src(__file__)
+See `run_in_executor example` page for a complete running example
+"""
+)
+
+st.page_link("pages/4_run_in_executor_example.py", label="`run_in_executor` example")

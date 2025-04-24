@@ -2,6 +2,7 @@ import pytest
 import logging
 import asyncio
 from .func_decorator import run_in_executor
+import streamlit.runtime.scriptrunner as st_scriptrunner
 from .log_sink import create_log_sink
 from ._errors import UnsupportedCallSite
 
@@ -31,6 +32,8 @@ async def test_sync_simple(prohibit_get_run_ctx):
 async def test_sync_with_script_run_context(stub_run_ctx_cm):
     @run_in_executor(with_script_run_context=True)
     def foo(x: int, y: int) -> int:
+        ctx = st_scriptrunner.get_script_run_ctx()
+        assert ctx is not None
         return x + y
 
     # transformed foo cannot be called without a ScriptRunContext
