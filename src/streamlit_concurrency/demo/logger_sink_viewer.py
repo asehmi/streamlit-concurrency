@@ -1,25 +1,32 @@
 import datetime
 import asyncio
+from typing import Iterable
 import pandas as pd
 import logging
 from streamlit_concurrency.log_sink import create_log_sink
 
+logger = logging.getLogger(__name__)
+
 
 async def capture_logs_render_df(
-    dest, duration: float, update_interval=0.05, log_level=logging.INFO
+    dest,
+    duration: float = 3,
+    update_interval=0.2,
+    level=logging.INFO,
+    logger_names: Iterable[str] | None = None,
 ):
     deadline = datetime.datetime.now() + datetime.timedelta(seconds=duration)
-    with create_log_sink(level=log_level) as (records, lines):
+    with create_log_sink(level=level, logger_names=logger_names) as (records, lines):
         while datetime.datetime.now() < deadline:
             df = pd.DataFrame(
                 {
-                    "time": r.created,
+                    "time": datetime.datetime.fromtimestamp(r.created),
                     "thread": r.threadName,
                     "message": r.message,
                     "args": r.args,
                 }
                 for r in records
             )
+            # logger.info("rendered %d log records", len(df))
             dest.dataframe(df)
-
-        await asyncio.sleep(update_interval)
+            await asyncio.sleep(update_interval)

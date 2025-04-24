@@ -6,7 +6,7 @@ import threading
 import logging
 
 from streamlit_concurrency import run_in_executor
-from streamlit_concurrency.demo import render_page_src, capture_logs_render_df
+import streamlit_concurrency.demo as stc_demo
 
 logger = logging.getLogger(__name__)
 
@@ -68,9 +68,19 @@ with col3:
     widget_for_main = st.empty()
 
 
+st.write("captured logs")
+logging_dest = st.empty()
+
+
 async def main():
-    sync_result, async_result = await asyncio.gather(
-        sync_function(param_value), async_function(param_value)
+    sync_result, async_result, _ = await asyncio.gather(
+        sync_function(param_value),
+        async_function(param_value),
+        stc_demo.capture_logs_render_df(
+            logging_dest,
+            duration=3,
+            update_interval=0.1,
+        ),
     )
     widget_for_main.markdown(f"""
 `sync_function()` returned `{sync_result}`
@@ -81,8 +91,7 @@ main() running in {threading.current_thread().name}
     """)
 
 
+stc_demo.render_page_src(__file__)
+
 if __name__ == "__main__" and run_clicked:
     asyncio.run(main())
-
-
-render_page_src(__file__)

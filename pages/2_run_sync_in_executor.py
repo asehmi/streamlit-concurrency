@@ -43,7 +43,7 @@ async def main():
         stc_demo.capture_logs_render_df(
             log_placeholder,
             duration=5,
-            update_interval=0.1,
+            update_interval=1,
         ),
         read_session_state_and_update_widget(),
     )
