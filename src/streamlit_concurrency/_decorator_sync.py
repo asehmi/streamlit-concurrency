@@ -68,7 +68,7 @@ def transform_sync(
     # dump_func_metadata(func)
     # dump_func_code("wrap_sync", func)
 
-    async def wrapper(*args, **kwargs) -> R:
+    async def wrapper(*args_, **kwargs_) -> R:
         # a wrapper that
         # 1. capture possible ScriptRunContext
         # 2. run decorated `func` in executor, with the ScriptRunContext context-managed
@@ -80,8 +80,8 @@ def transform_sync(
         else:
             cm = contextlib.nullcontext()
 
-        # a sync function to do real work in the executor
-        def run_in_executor(*args_, **kwargs_):
+        # the sync function to run in executor, doing the real work
+        def run_in_executor(*args, **kwargs) -> R:
             # NOTE: need to make sure this works with other executors
             if cache is None:
                 with cm:
@@ -90,25 +90,22 @@ def transform_sync(
                         f"executing original {func.__name__}",
                         f"executed original {func.__name__}",
                     ):
-                        return func(*args_, **kwargs_)
+                        return func(*args, **kwargs)
             # else: wrap with st.cache_data first
+
             # NOTE st.cache_data needs the provided user function
             # internally it creates cache key for the function from __module__ __qualname__ __code__ etc
-            with cm:
-                # NOTE force st.cache_data to not show_spinner
-                # or it will try to use a ScriptRunContext
-                # if
-                func_with_cache = st.cache_data(
-                    func, **{**cache, "show_spinner": False}
-                )
+
+            # NOTE cm is not required when show_spinner=False
+            func_with_cache = st.cache_data(func, **{**cache, "show_spinner": False})
             with debug_enter_exit(
                 logger,
                 f"executing cached {func.__name__}",
                 f"executed cached {func.__name__}",
             ):
-                return func_with_cache(*args_, **kwargs_)
+                return func_with_cache(*args, **kwargs)
 
-        future = executor.submit(run_in_executor, *args, **kwargs)
+        future = executor.submit(run_in_executor, *args_, **kwargs_)
         return await asyncio.wrap_future(future)
 
     return functools.update_wrapper(wrapper, func)

@@ -3,7 +3,7 @@ import logging
 import asyncio
 from .func_decorator import run_in_executor
 from .log_sink import create_log_sink
-from ._errors import UnsupportedExecutor, UnsupportedFunction, UnsupportedCallSite
+from ._errors import UnsupportedCallSite
 
 
 logger = logging.getLogger(__name__)

@@ -3,7 +3,7 @@ import logging
 import asyncio
 from .func_decorator import run_in_executor
 from .log_sink import create_log_sink
-from ._errors import UnsupportedExecutor, UnsupportedFunction, UnsupportedCallSite
+from ._errors import UnsupportedCallSite
 
 
 logger = logging.getLogger(__name__)
@@ -28,7 +28,6 @@ async def test_async_simple(prohibit_get_run_ctx):
     assert logged_args == [(1, 2)]
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_async_with_script_run_context(stub_run_ctx_cm):
     @run_in_executor(with_script_run_context=True)
@@ -44,11 +43,10 @@ async def test_async_with_script_run_context(stub_run_ctx_cm):
         assert await foo(1, 2) == 3
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_sync_cached(prohibit_get_run_ctx):
     @run_in_executor(cache={"ttl": 0.2})
-    def foo(param: int):
+    async def foo(param: int):
         logger.info("foo called %s", param)
         return param
 
@@ -68,12 +66,11 @@ async def test_sync_cached(prohibit_get_run_ctx):
     assert args == [(1,), (2,), (1,)]
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_sync_cached_inner_function(prohibit_get_run_ctx):
     def create_foo():
         @run_in_executor(cache={"ttl": 0.2})
-        def foo(param: int):
+        async def foo(param: int):
             logger.info("foo called %s", param)
             return param
 

@@ -73,7 +73,7 @@ def transform_async(
         else:
             cm = contextlib.nullcontext()
 
-        # the sync function dispath to the 'work' executor
+        # the sync function to run in executor, doing the real work
         def run_in_executor(*args, **kwargs) -> R:
             with cm:
                 with debug_enter_exit(
@@ -94,37 +94,33 @@ def transform_async(
                 return await asyncio.wrap_future(
                     executor.submit(run_in_executor, *args, **kwargs)
                 )
-        # else: trick to cache
 
-        def cachable_run_in_executor(*args, **kwargs) -> R:
+        # else: create a sync function to use st.cache_data
+        waiter_executor = get_executor("thread")
+
+        def wait_in_another_executor(*args, **kwargs) -> R:
             with debug_enter_exit(
                 logger,
-                f"waiting for {run_in_executor.__name__} wrapping {func.__name__}",
-                f"waited for {run_in_executor.__name__} wrapping {func.__name__}",
+                f"start waiting for {run_in_executor.__name__} wrapping {func.__name__}",
+                f"finish waiting for {run_in_executor.__name__} wrapping {func.__name__}",
             ):
-                return worker_executor.submit(run_in_executor, *args, **kwargs).result()
+                return waiter_executor.submit(run_in_executor, *args, **kwargs).result()
 
+        # NOTE unlike in the sync case where we can use st.cache_data directly,
         # this hack is required for st.cache to create different cache key for each run_in_executor instance
         # see https://github.com/streamlit/streamlit/issues/11157
-        cachable_run_in_executor.__qualname__ += f" wrapping {func.__qualname__}"
+        wait_in_another_executor.__qualname__ += f" wrapping {func.__qualname__}"
 
-        # dispatch run_in_executor (now cacheable with st.cache_data) to the (worker) executor
-        def run_with_cache_in_waiter_executor(*args, **kwargs) -> R:
-            if cache is None:
-                future = waiter_executor.submit(run_in_executor, *args, **kwargs)
-                return future.result()
+        wait_in_another_executor = st.cache_data(**{**cache, "show_spinner": False})(
+            wait_in_another_executor
+        )
 
-            # else: wrap with st.cache_data first
-            with cm:
-                run_in_executor_with_cache = st.cache_data(run_in_executor, **cache)
-            with debug_enter_exit(
-                logger,
-                f"waiting for cached {func.__name__}",
-                f"waiting for cached {func.__name__}",
-            ):
-                future = executor.submit(run_in_executor_with_cache, *args, **kwargs)
-                return run_in_executor_with_cache(*args, **kwargs)
-
-        return await run_with_cache_in_waiter_executor(*args, **kwargs)
+        future = waiter_executor.submit(wait_in_another_executor, *args, **kwargs)
+        with debug_enter_exit(
+            logger,
+            f"start waiting for cached {func.__name__}",
+            f"finish waiting for cached {func.__name__}",
+        ):
+            return await asyncio.wrap_future(future)
 
     return functools.update_wrapper(wrapper, func)
