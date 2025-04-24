@@ -3,7 +3,8 @@ from ._decorator_sync import transform_sync
 from .demo import example_func
 from ._decorator_async import transform_async
 from ._errors import UnsupportedExecutor, UnsupportedFunction, UnsupportedCallSite
-from ._test_hack import _strict_get_ctx, _prohibit_get_ctx
+from ._streamlit_hack import _strict_get_ctx, _prohibit_get_ctx
+import streamlit.runtime.scriptrunner as st_scriptrunner
 
 
 def test_assertions():
@@ -18,3 +19,8 @@ def test_assertions():
 
     with pytest.raises(UnsupportedCallSite):
         _prohibit_get_ctx()
+
+
+def test_prohibit(prohibit_get_ctx):
+    with pytest.raises(UnsupportedCallSite):
+        st_scriptrunner.get_script_run_ctx(suppress_warning=True)

@@ -1,7 +1,6 @@
 import asyncio
 import streamlit as st
 from streamlit_concurrency import run_in_executor
-from streamlit_concurrency._func_util import log_with_callsite
 
 
 # streamlit.runtime.caching.cache_errors.UnserializableReturnValueError
@@ -14,7 +13,6 @@ async def async_function():
 @run_in_executor()
 async def async_function2():
     await asyncio.sleep(1)
-    log_with_callsite("async_function2 running")
     return "Async function result"
 
 

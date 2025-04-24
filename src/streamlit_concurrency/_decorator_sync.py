@@ -15,9 +15,11 @@ import contextlib
 import logging
 from ._func_util import (
     assert_is_transformable_sync,
+    debug_enter_exit,
+)
+from ._streamlit_util import (
     assert_st_script_run_ctx,
     create_script_run_context_cm,
-    debug_enter_exit,
 )
 from ._func_cache import CacheConf
 from ._executors import get_executor

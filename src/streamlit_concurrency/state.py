@@ -1,6 +1,6 @@
 import streamlit
 from typing import Callable, Generic, Self, Type, TypeVar, Any, Dict
-from ._func_util import assert_st_script_run_ctx
+from ._streamlit_util import assert_st_script_run_ctx
 import logging
 
 logger = logging.getLogger(__name__)

@@ -1,8 +1,14 @@
-import streamlit as st
-import streamlit.runtime.scriptrunner as st_scriptrunner
-from ._errors import UnsupportedCallSite
+"""
+Monkey patch streamlit for test
+
+NOTE other code MUST not import functions from st_scriptrunner as
+they get monkey patched in test. Import the containing module instead.
+"""
 
 import logging
+
+import streamlit.runtime.scriptrunner as st_scriptrunner
+from ._errors import UnsupportedCallSite
 
 logger = logging.getLogger(__name__)
 

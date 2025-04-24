@@ -12,6 +12,9 @@ venv/.deps_installed: requirements.txt
 	venv/bin/pip install -r requirements.txt
 	touch $@
 
+test-watch:
+	source venv/bin/activate && venv/bin/ptw src
+
 test:
 	venv/bin/pytest src
 

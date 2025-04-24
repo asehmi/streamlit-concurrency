@@ -5,9 +5,11 @@ import functools
 import contextlib
 from ._func_util import (
     assert_is_transformable_async,
+    debug_enter_exit,
+)
+from ._streamlit_util import (
     assert_st_script_run_ctx,
     create_script_run_context_cm,
-    debug_enter_exit,
 )
 from concurrent.futures import Executor
 import logging
