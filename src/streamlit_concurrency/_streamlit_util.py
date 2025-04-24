@@ -42,6 +42,8 @@ def create_script_run_context_cm(ctx: ScriptRunContext):
 
     - when enter, adds given script_run_ctx to the current thread
     - when exit, un-adds it from current thread
+
+    TODO: add assertion to ensure a thread cannot enter twice
     """
     existing_ctx = st_scriptrunner.get_script_run_ctx(suppress_warning=True)
     existing_ctx_repr = _format_script_run_ctx(existing_ctx)

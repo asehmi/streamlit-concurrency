@@ -1,6 +1,10 @@
+import asyncio
+import concurrent.futures as cf
 import streamlit as st
 import functools
-import concurrent.futures as cf
+import contextlib
+import logging
+
 from typing import (
     Coroutine,
     Literal,
@@ -9,9 +13,6 @@ from typing import (
     Callable,
     ParamSpec,
 )
-import asyncio
-import contextlib
-import logging
 from ._func_util import (
     assert_is_transformable_sync,
     debug_enter_exit,
@@ -35,7 +36,7 @@ def transform_sync(
     executor: cf.Executor | Literal["thread", "process"] = "thread",
     with_script_run_context: bool = False,
 ) -> Callable[P, Coroutine[None, None, R]]:
-    """Transforms a sync function to run in executor and return result as Awaitable
+    """Transforms a *sync* function to do real work in executor
 
     @param cache: configuration to pass to st.cache_data()
 
@@ -49,6 +50,7 @@ def transform_sync(
     @return: an async function
 
     """
+    assert executor == "thread"
     assert_is_transformable_sync(func)
 
     if isinstance(executor, str):

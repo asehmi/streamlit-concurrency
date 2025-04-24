@@ -9,12 +9,12 @@ from ._errors import UnsupportedExecutor, UnsupportedFunction, UnsupportedCallSi
 logger = logging.getLogger(__name__)
 
 
-@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_async_simple(prohibit_get_run_ctx):
     @run_in_executor()
     async def f(x: int, y: int) -> int:
         logger.info("f called with x=%s y=%s", x, y)
+        await asyncio.sleep(0)
         return x + y
 
     with create_log_sink(logger_names=frozenset([__name__])) as (records, lines):
