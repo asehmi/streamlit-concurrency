@@ -13,7 +13,7 @@ venv/.deps_installed: requirements.txt
 	touch $@
 
 test:
-	venv/bin/pytest --log-cli-level=DEBUG src
+	venv/bin/pytest src
 
 format:
 	venv/bin/ruff format .
