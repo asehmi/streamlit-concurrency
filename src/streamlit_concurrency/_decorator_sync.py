@@ -2,7 +2,6 @@ import streamlit as st
 import functools
 import concurrent.futures as cf
 from typing import (
-    Awaitable,
     Coroutine,
     Literal,
     Optional,
@@ -94,9 +93,12 @@ def transform_sync(
             # NOTE st.cache_data needs the provided user function
             # internally it creates cache key for the function from __module__ __qualname__ __code__ etc
             with cm:
-                # NOTE st.cache_data requires ScriptRunContext too (maybe only when show_spinner=True)
-                # TODO: validate this and TEST
-                func_with_cache = st.cache_data(func, **cache)
+                # NOTE force st.cache_data to not show_spinner
+                # or it will try to use a ScriptRunContext
+                # if
+                func_with_cache = st.cache_data(
+                    func, **{**cache, "show_spinner": False}
+                )
             with debug_enter_exit(
                 logger,
                 f"executing cached {func.__name__}",

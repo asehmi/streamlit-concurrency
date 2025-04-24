@@ -1,10 +1,10 @@
 import pytest
-import time
 import asyncio
 import logging
 
 from .func_decorator import run_in_executor
 from ._errors import UnsupportedExecutor, UnsupportedFunction, UnsupportedCallSite
+from .log_sink import create_log_sink
 
 logger = logging.getLogger(__name__)
 
@@ -20,41 +20,82 @@ def test_illegal_options():
 async def test_sync_simple(prohibit_get_run_ctx):
     @run_in_executor()
     def f(x: int, y: int) -> int:
+        logger.info("f called with x=%s y=%s", x, y)
         return x + y
 
-    assert await f(1, 2) == 3
+    with create_log_sink(logger_names=frozenset([__name__])) as (records, lines):
+        assert await f(1, 2) == 3
+    logged_args = [
+        rec.args
+        for rec in records
+        if rec.msg == "f called with x=%s y=%s"
+        and rec.threadName.startswith("streamlit-concurrency")  # type: ignore
+    ]
+    assert logged_args == [(1, 2)]
 
 
 @pytest.mark.asyncio
 async def test_sync_with_script_run_context(stub_run_ctx_cm):
     @run_in_executor(with_script_run_context=True)
-    def f(x: int, y: int) -> int:
+    def foo(x: int, y: int) -> int:
         return x + y
 
+    # transformed foo cannot be called without a ScriptRunContext
     with pytest.raises(UnsupportedCallSite):
-        await f(1, 2)
+        await foo(1, 2)
 
+    # transformed foo can be called with a stub ScriptRunContext
     with stub_run_ctx_cm:
-        assert await f(1, 2) == 3
+        assert await foo(1, 2) == 3
 
 
 @pytest.mark.asyncio
 async def test_sync_cached(prohibit_get_run_ctx):
-    sum = 0
+    @run_in_executor(cache={"ttl": 0.2})
+    def foo(param: int):
+        logger.info("foo called %s", param)
+        return param
 
-    @run_in_executor(cache={"ttl": 1, "show_spinner": False})
-    def inc(delta: int):
-        nonlocal sum
-        sum += delta
-        time.sleep(0.2)
+    with create_log_sink(logger_names=[__name__]) as (records, lines):
+        assert await foo(1) == 1
+        assert await foo(1) == 1  # cache hit
+        assert await foo(2) == 2
+        await asyncio.sleep(0.2)
+        assert await foo(1) == 1  # cache miss after TTL
 
-    assert sum == 0
-    await inc(1)
-    assert sum == 1
-    await inc(2)
-    assert sum == 3
-    await inc(1)  # cache hit and bypassed
-    assert sum == 3
-    await asyncio.sleep(1)
-    await inc(1)
-    assert sum == 4
+    args = [
+        r.args
+        for r in records
+        if r.threadName.startswith("streamlit-concurrency") and r.msg == "foo called %s"  # type: ignore
+    ]
+
+    assert args == [(1,), (2,), (1,)]
+
+
+@pytest.mark.asyncio
+async def test_sync_cached_inner_function(prohibit_get_run_ctx):
+    def create_foo():
+        @run_in_executor(cache={"ttl": 0.2})
+        def foo(param: int):
+            logger.info("foo called %s", param)
+            return param
+
+        return foo
+
+    foo1 = create_foo()
+    foo2 = create_foo()
+
+    with create_log_sink(logger_names=frozenset([__name__])) as (records, lines):
+        assert await foo1(1) == 1
+        assert await foo2(1) == 1  # cache hit
+        assert await foo1(2) == 2
+        await asyncio.sleep(0.2)
+        assert await foo1(1) == 1  # cache miss after TTL
+
+    logged_args = [
+        r.args
+        for r in records
+        if r.threadName.startswith("streamlit-concurrency") and r.msg == "foo called %s"  # type: ignore
+    ]
+
+    assert logged_args == [(1,), (2,), (1,)]
