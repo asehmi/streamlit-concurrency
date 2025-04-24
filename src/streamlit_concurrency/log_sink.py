@@ -1,13 +1,18 @@
+"""
+Log sink to capture log records and formatted log lines as a context manager.
+
+Currently only used for test and demo.
+"""
+
 import logging
 import contextlib
-import itertools
 import streamlit.logger as st_logger
 
 logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
-def create_log_record_sink(
+def create_log_sink(
     level: int = logging.INFO,
     logger_names: frozenset[str] | None = None,
     format: str
@@ -41,12 +46,3 @@ def create_log_record_sink(
 
     log_src.removeHandler(handler)
     handler.close()
-
-
-def test_log_sink():
-    with create_log_record_sink() as (log_records, log_lines):
-        logger.warning("test")
-        logger.warning("test2")
-
-    for rec, line in itertools.zip_longest(log_records, log_lines):
-        print(rec, "=>", line)
