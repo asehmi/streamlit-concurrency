@@ -38,7 +38,7 @@ def _create_stub_run_ctx_cm():
     setattr(
         threading.current_thread(),
         SCRIPT_RUN_CONTEXT_ATTR_NAME,
-        DummyObject("stub_script_run_context"),
+        DummyScriptRunContext("stub_script_run_context"),
     )
     yield
     delattr(threading.current_thread(), SCRIPT_RUN_CONTEXT_ATTR_NAME)
@@ -57,3 +57,11 @@ class DummyObject:
 
     def __str__(self) -> str:
         return ".".join((self.__root,) + self.__path)
+
+
+class DummyScriptRunContext(DummyObject):
+    # mock this property in real ScriptRunContext which is set from its_script_runner.session_state
+    @property
+    def session_state(self):
+        # imitate
+        return {}
