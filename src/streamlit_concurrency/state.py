@@ -35,7 +35,7 @@ class StateRef(Generic[S]):
 
     def __init__(
         self,
-        storage: Dict[str, Any],
+        storage: Dict[tuple, Any],
         key: str,
         namespace: Optional[str] = None,
         factory: Union[Callable[[], S], None] = None,
@@ -65,9 +65,8 @@ class StateRef(Generic[S]):
         self.__storage[self.__full_key] = new_value
         return self
 
-    @value.deleter
-    def value(self):
-        self.clear()
+    # @value.deleter
+    # def value(self): self.clear()
 
     def reduce(self, reducer: Reducer[S, A], *action: A.args, **kwargs: A.kwargs) -> S:
         self.value = reducer(self.value, *action, **kwargs)
@@ -78,8 +77,8 @@ class StateRef(Generic[S]):
             del self.__storage[self.__full_key]
 
     @property
-    def __full_key(self) -> str:
-        return f"{self.__namespace}:|:{self.__key}"
+    def __full_key(self) -> tuple:
+        return (self.__namespace, self.__key)
 
 
 @overload

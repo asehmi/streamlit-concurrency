@@ -1,4 +1,4 @@
-# `run_in_executor` decorator
+# `run_in_executor`
 
 `run_in_executor` decorator transforms functions to run them concurrently.
 
@@ -55,15 +55,46 @@ When true, capture the ScriptRunContext and add it to the executor thread runnin
 
 ### Better not enable `cache` and `with_script_run_context` together
 
-Internally `st.cache_data` tries . This may cause problem 
+Internally `st.cache_data` tries to cache updates to widgets. This may cause problem 
 
 ### `cache.show_spinner` is not supported
 
-This is due to 
-- `Rreplay`
-    - 
-Using both on 1 
-Is possible yet unrecommended.
-This is due 
+Not supporting it is simpler. When transformed functions are `await`ed the running indicator works anyway.
 
-To workaround this 
+# `use_state`
+
+State management util for streamlit pages.
+
+Inspired by [React hook](https://react.dev/reference/react/hooks) and Redux.
+
+## Usage
+
+```py
+# `use_state` creates StateRef, a reference to value in st.session_state.
+# The value is kept inside st.session_state, keyed with (namespace, key) tuple
+page_scoped_state = use_state("page_scoped_ref", namespace=__file__)
+session_scoped_state = use_state("page_scoped_ref") # default: namespace=None
+
+# simple reads / writes
+s.value = 1
+s.value # => 1
+
+# typing & initialization:
+#
+# type is infered from `factory` callable or `type_`
+s = use_state(..., factory=int) # initialize 0
+s = use_state(..., type_=int) # not initialized (reading an uninitialized state throws KeyError)
+
+# mutate state with a reducer:
+# 
+# s.reduce(reducer, *args, **kwargs)
+# is the same as
+# s.value = reducer(s.value, *args, **kwargs)
+s.value = 2
+s.reduce(lambda prev, delta: prev + delta, 3)
+assert s.value == 5
+
+
+# clear: or uninitialize a state
+s.clear()
+```

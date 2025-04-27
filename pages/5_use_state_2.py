@@ -11,7 +11,7 @@ session_scoped_state.init(int)
 st.markdown(f"""
 This page shows the use of `use_state` to manage state in Streamlit apps.
 
-Switch between this page and `state management 1` to see how they works.
+Switch between this page and `page_state` to see how they works.
 
 """)
 
@@ -21,7 +21,7 @@ with col1:
     st.markdown(f"page_scoped_state.value: `{page_scoped_state.value}`")
 
     if st.button("Update page-scoped state"):
-        page_scoped_state.reduce(lambda x: x + 1)
+        page_scoped_state.reduce(lambda prev: prev + 1)
         st.rerun()
 
     if st.button("Clear page-scoped state"):
@@ -32,7 +32,7 @@ with col2:
     st.markdown(f"session_scoped_state.value: `{session_scoped_state.value}`")
 
     if st.button("Update session-scoped state"):
-        session_scoped_state.reduce(lambda x: x + 1)
+        session_scoped_state.reduce(lambda prev: prev + 1)
         st.rerun()
 
     if st.button("Clear session-scoped state"):
