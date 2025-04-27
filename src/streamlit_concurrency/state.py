@@ -46,10 +46,19 @@ class StateRef(Generic[S]):
         if factory is not None:
             self.init(factory)
 
-    def init(self, factory: Callable[[], S]) -> Self:
+    def init(self, factory: Callable[[], S]) -> bool:
+        """T
+
+        Args:
+            factory (Callable[[], S]): called when the state is uninitialized
+
+        Returns:
+            bool: the state was uninitialized
+        """
         if self.__full_key not in self.__storage:
             self.__storage[self.__full_key] = factory()
-        return self
+            return True
+        return False
 
     @property
     def value(self) -> S:
@@ -65,6 +74,7 @@ class StateRef(Generic[S]):
         self.__storage[self.__full_key] = new_value
         return self
 
+    # not defining a deleter: deleting a ref (variable & pointer) should not affect the actual value
     # @value.deleter
     # def value(self): self.clear()
 
@@ -72,7 +82,7 @@ class StateRef(Generic[S]):
         self.value = reducer(self.value, *action, **kwargs)
         return self.value
 
-    def clear(self):
+    def deinit(self):
         if self.__full_key in self.__storage:
             del self.__storage[self.__full_key]
 
@@ -81,13 +91,13 @@ class StateRef(Generic[S]):
         return (self.__namespace, self.__key)
 
 
-@overload
+@overload  # to infer S from type_
 def use_state(
     key: str, *, namespace: str | None = None, type_: Type[S], **kwargs: Any
 ) -> StateRef[S]: ...
 
 
-@overload
+@overload  # to infer S from a factory callable
 def use_state(
     key: str,
     *,
@@ -97,7 +107,7 @@ def use_state(
 ) -> StateRef[S]: ...
 
 
-@overload
+@overload  # fallback to infer to Any
 def use_state(
     key: str, *, namespace: str | None = None, **kwargs: Any
 ) -> StateRef[Any]: ...
@@ -105,9 +115,10 @@ def use_state(
 
 def use_state(
     key: str,
+    *,
     namespace: str | None = None,
     **kwargs: Any,
-) -> StateRef[S]:
+) -> StateRef[S]:  # type: ignore
     assert_st_script_run_ctx("use_state()")
     storage = streamlit.session_state.get("_streamlit_concurrency_states")
     if storage is None:

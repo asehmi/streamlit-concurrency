@@ -2,28 +2,19 @@
 
 Easier and safer concurrency for streamlit.
 
-This library provide APIs:
+This library provide 2 APIs:
 
 - `run_in_executor`: transform function to run concurrently in executor (ThreadPoolExecutor)
     - with configurable caching like `st.cache_data`, even for async function
-    - transformed function can access `st.session_state` and widget APIs from other threads
+    - transformed function can access `st.session_state` and widgets from other threads
 - `use_state`: manage page state in and across pages
 
 Links:
 
-- [Running demo](https://concurrency.streamlit.app/)
-- [API](https://github.com/jokester/streamlit-concurrency/API.md)
+- [Demo](https://concurrency.streamlit.app/)
+- [API](https://github.com/jokester/streamlit-concurrency/blob/main/API.md)
 - [Github](https://github.com/jokester/streamlit-concurrency/)
  -[pypi](https://pypi.org/project/streamlit-concurrency/)
-
-## `run_in_executor`: transform sync or async function to run in executor
-
-See [docs/api_run_in_executor.md](docs/api_run_in_executor.md) for details.
-
-## `use_state`: page- or session- scoped state
-
-See [docs/api_use_state.md](docs/api_use_state.md) for details.
-
 
 
 ## License

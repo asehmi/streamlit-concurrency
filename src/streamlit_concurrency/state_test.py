@@ -21,7 +21,7 @@ def test_use_state_factory_inited(stub_run_ctx_cm):
     assert state.value == 101
 
     # Clear the state
-    del state.value
+    state.deinit()
 
     # reading uninitialized state should raise KeyError
     with pytest.raises(KeyError):

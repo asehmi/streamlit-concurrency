@@ -25,7 +25,7 @@ with col1:
         st.rerun()
 
     if st.button("Clear page-scoped state"):
-        page_scoped_state.clear()
+        page_scoped_state.deinit()
         st.rerun()
 
 with col2:
@@ -36,7 +36,7 @@ with col2:
         st.rerun()
 
     if st.button("Clear session-scoped state"):
-        session_scoped_state.clear()
+        session_scoped_state.deinit()
         st.rerun()
 
 demo.render_page_src(__file__)
