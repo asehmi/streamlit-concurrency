@@ -26,7 +26,9 @@ async def capture_logs_render_df(
                 return
             df = pd.DataFrame(
                 {
-                    "time": datetime.datetime.fromtimestamp(r.created),
+                    "time": datetime.datetime.fromtimestamp(r.created).isoformat(
+                        timespec="milliseconds"
+                    ),
                     "thread": r.threadName,
                     "message": r.message,
                     "args": r.args,
