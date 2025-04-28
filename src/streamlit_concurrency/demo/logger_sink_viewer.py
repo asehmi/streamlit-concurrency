@@ -31,7 +31,7 @@ async def capture_logs_render_df(
                     ),
                     "thread": r.threadName,
                     "message": r.message,
-                    "args": r.args,
+                    "args": tuple(r.args) if r.args else None,
                 }
                 for r in records
             )
