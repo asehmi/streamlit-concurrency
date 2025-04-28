@@ -15,10 +15,10 @@ venv/.deps_installed: requirements.txt
 test-watch:
 	source venv/bin/activate && venv/bin/ptw src
 
-test:
+test: deps
 	venv/bin/pytest src
 
-format:
+format: deps
 	venv/bin/ruff format .
 
 venv: venv/.venv_created

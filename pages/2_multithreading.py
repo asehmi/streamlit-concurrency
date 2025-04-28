@@ -9,41 +9,44 @@ from streamlit_concurrency import run_in_executor
 logger = demo.logger
 
 st.markdown("""
-This page demostrates correct multithreading with `streamlit-concurrency`.
+This page demostrates multithreading with `streamlit-concurrency`.
             
-In this page (compared to `troubled multithreading` page):
+Compared to `troubled multithreading` example:
 
-1. widget can be updated from an executor thread
-2. session state can be accessed in an executor thread
+1. widget can be updated from another thread
+2. session state can be accessed in another thread
 3. "RUNNING" indicator correctly reflects code running in executor
-4. internally the ScriptRunContext object is context-managed and won't be leaked
+4. internally the ScriptRunContext object gets context-managed and won't be leaked
 
----
 """)
 st.session_state["foo"] = "foo-value"
 
 col1, col2 = st.columns(2)
 with col1:
-    sleep1 = st.number_input("sleep in task 1", min_value=0, value=0, max_value=6)
-    dest1 = st.empty()
+    sleep1 = st.number_input("Task 1 duration", min_value=0, value=1, max_value=5)
+    dest1 = st.container()
 
 with col2:
-    sleep2 = st.number_input("sleep in task 2", min_value=0, value=0, max_value=5)
-    dest2 = st.empty()
+    sleep2 = st.number_input("Task 2 duration", min_value=0, value=2, max_value=5)
+    dest2 = st.container()
 
 timeline_placeholder = st.empty()
 
 
-update_widget_clicked = st.button(f"Run tasks in executor")
+update_widget_clicked = st.button(f"Run 2 tasks concurrently in executor")
 
 
 @run_in_executor(with_script_run_context=True)
-def time_consuming_task(dest, delay: float):
+def time_consuming_task(dest, duration: float, interval=0.2):
     start = datetime.datetime.now()
-    time.sleep(delay)
+    deadline = datetime.datetime.now() + datetime.timedelta(seconds=duration)
     value_from_session_state = st.session_state.get("foo", None)
-    dest.markdown(f"""
-Widget updated from thread {threading.current_thread().name}, with value in session state: {value_from_session_state}""")
+    dest.write(f"st.session_state['foo'] is {value_from_session_state}")
+    while datetime.datetime.now() < deadline:
+        dest.markdown(
+            f"""{datetime.datetime.now()} running in thread `{threading.current_thread().name}`"""
+        )
+        time.sleep(interval)
     return (start, datetime.datetime.now())
 
 

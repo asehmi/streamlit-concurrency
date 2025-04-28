@@ -1,0 +1,23 @@
+name: Check
+on:
+    workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    steps:
+
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-python@v5
+      with:
+        python-version-file: "pyproject.toml"
+
+    - name: Build
+      run: |
+        python3 -m build --wheel --sdist
+
+
+    - uses: pypa/gh-action-pypi-publish@release/v1

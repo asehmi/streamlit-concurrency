@@ -6,21 +6,24 @@ import streamlit_concurrency.demo as demo
 from streamlit_concurrency.log_sink import create_log_sink
 
 st.markdown("""
-This page demostrates incorrect multithreading in streamlit.
+This page demostrates common issues when multithreading in streamlit.
             
 Please click a button and observe this page and the console.
 """)
 
 st.session_state["foo"] = "foo-value"
 
-update_widget_clicked = st.button(f"Update widget in a new thread")
+update_widget_clicked = st.button(
+    f"Update widget in a new thread and cause `streamlit.errors.NoSessionContext`"
+)
 
-read_session_state_clicked = st.button("Read session state in a new thread")
+read_session_state_clicked = st.button(
+    "Read session state in a new thread and get `None`"
+)
 
 # won't be updated actually
 result = st.empty()
 
-st.divider()
 demo.render_page_src(__file__)
 
 
@@ -31,9 +34,7 @@ def get_data():
 
 class CustomThreadUpdatingWidget(threading.Thread):
     def run(self):
-        # sleeping
-        time.sleep(1)
-        # a custom thread can call @st.cache_data() function
+        # a custom thread can call @st.cache_data() decorated function
         data = get_data()
         assert data == "dummy"
 
