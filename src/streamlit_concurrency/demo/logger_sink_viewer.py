@@ -18,9 +18,11 @@ async def capture_logs_render_df(
     deadline = datetime.datetime.now() + datetime.timedelta(seconds=duration)
     with create_log_sink(level=level, logger_names=logger_names) as (records, lines):
 
-        def render_logs():
+        def render_logs(recording_finished: bool):
             if not records:
-                dest.write("waiting for logs...")
+                dest.write(
+                    "no logs captured" if recording_finished else "waiting for logs..."
+                )
                 return
             df = pd.DataFrame(
                 {
@@ -34,6 +36,6 @@ async def capture_logs_render_df(
             dest.dataframe(df)
 
         while datetime.datetime.now() < deadline:
-            render_logs()
+            render_logs(False)
             await asyncio.sleep(update_interval)
-    render_logs()
+    render_logs(True)
