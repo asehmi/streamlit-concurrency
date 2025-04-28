@@ -14,7 +14,7 @@ Links:
 - [Demo](https://concurrency.streamlit.app/)
 - [API](https://github.com/jokester/streamlit-concurrency/blob/main/API.md)
 - [Github](https://github.com/jokester/streamlit-concurrency/)
- -[pypi](https://pypi.org/project/streamlit-concurrency/)
+- [pypi](https://pypi.org/project/streamlit-concurrency/)
 
 
 ## License
