@@ -8,5 +8,5 @@ logging.basicConfig(
     # datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-for info_loggers in ["asyncio", "streamlit"]:
+for info_loggers in ["asyncio", "streamlit", "watchdog.observers.inotify_buffer"]:
     logging.getLogger(info_loggers).setLevel(logging.INFO)
