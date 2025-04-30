@@ -23,13 +23,19 @@ def _get_thread_pool_executor() -> cf.Executor:
 
 @functools.lru_cache(maxsize=1)
 def _get_process_pool_executor() -> cf.Executor:
-    raise NotImplementedError
+    return cf.ProcessPoolExecutor(max_tasks_per_child=4)
 
 
 @functools.lru_cache(maxsize=1)
 def _get_interpreter_pool_executor() -> cf.Executor:
     # should be available since py3.14
-    return cf.InterpreterPoolExecutor()
+    try:
+        return cf.InterpreterPoolExecutor()  # type: ignore
+    except AttributeError as e:
+        raise NotImplementedError(
+            "InterpreterPoolExecutor is not available in this Python version."
+            "Please use a different executor type."
+        ) from e
 
 
 @functools.lru_cache(maxsize=1)

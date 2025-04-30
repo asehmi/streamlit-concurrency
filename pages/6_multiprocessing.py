@@ -1,22 +1,29 @@
 import os
+import asyncio
 import streamlit as st
-import streamlit_concurrency as stc
+from streamlit_concurrency.demo import example_func
 # Like thi
 
+st.write(f"Streamlit app pid: {os.getpid()}")
 
-@stc.run_in_executor(executor="process")
-def cpu_intensive_task(n: int):
-    """A CPU-intensive task that takes a long time to compute."""
-    result = 0
-    for i in range(n):
-        result += i**2
-    return f"i ** {n} = {result} computed by {cpu_intensive_task.__name__} in pid={os.getpid()}"
+dest = st.empty()
 
 
-@stc.run_in_executor(executor="process")
-async def async_cpu_intensive_task(n: int):
-    """A CPU-intensive task that takes a long time to compute."""
-    result = 0
-    for i in range(n):
-        result += i**2
-    return f"i ** {n} = {result} computed by {cpu_intensive_task.__name__} in pid={os.getpid()}"
+async def main():
+    dest.markdown(f"""
+res1: running...
+
+res2: running...
+""")
+    res1, res2 = await asyncio.gather(
+        example_func.sync_cpu_intensive_in_process_executor(1000),
+        example_func.sync_cpu_intensive_in_process_executor(1000),
+    )
+    dest.markdown(f"""
+res1: {res1}
+
+res2: {res2}
+""")
+
+
+asyncio.run(main())

@@ -13,16 +13,12 @@ from typing import (
     Callable,
     ParamSpec,
 )
-from ._func_util import (
-    assert_is_transformable_sync,
-    debug_enter_exit,
-)
+from ._func_util import assert_is_transformable_sync, debug_enter_exit, globalize
 from ._streamlit_util import (
     assert_st_script_run_ctx,
     create_script_run_context_cm,
 )
 from ._func_cache import CacheConf
-from ._executors import get_executor
 
 R = TypeVar("R")
 P = ParamSpec("P")
@@ -79,6 +75,7 @@ def transform_sync(
             cm = contextlib.nullcontext()
 
         # the sync function to run in executor, doing the real work
+        @globalize
         def run_in_executor(*args, **kwargs) -> R:
             # NOTE: need to make sure this works with other executors
             if cache is None:

@@ -40,6 +40,7 @@ class FuncDecorator:
     def __call__(
         self,
         func: Union[
+            # FIXME maybe this is not really supported
             Callable[P, Awaitable[R]],
             Callable[P, Coroutine[None, None, R]],
         ],

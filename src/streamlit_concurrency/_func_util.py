@@ -1,7 +1,8 @@
 import inspect
+import sys
+import uuid
 import contextlib
 import logging
-from typing import Callable
 import time
 from ._errors import UnsupportedFunction
 
@@ -42,3 +43,17 @@ def debug_enter_exit(logger_: logging.Logger, enter_msg: str, exit_msg):
     yield
     exit_at = time.time()
     logger_.debug(exit_msg + " (took %.2f seconds)", exit_at - enter_at)
+
+
+# a hack to make a (possibly inner) function module-global
+# stole from https://gist.github.com/EdwinChan/3c13d3a746bb3ec5082f
+# but not working for cf.ProcessPoolExecutor
+
+
+def globalize(func):
+    def result(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    result.__name__ = result.__qualname__ = uuid.uuid4().hex
+    setattr(sys.modules[result.__module__], result.__name__, result)
+    return result
