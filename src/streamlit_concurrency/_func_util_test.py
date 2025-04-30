@@ -4,15 +4,16 @@ from .demo import example_func
 from ._decorator_async import transform_async
 from ._errors import UnsupportedExecutor, UnsupportedFunction, UnsupportedCallSite
 from ._streamlit_hack import _strict_get_ctx, _prohibit_get_ctx
+from ._executors import get_executor
 import streamlit.runtime.scriptrunner as st_scriptrunner
 
 
 def test_assertions():
     with pytest.raises(UnsupportedFunction):
-        transform_async(example_func.sleep_sync)  # type: ignore
+        transform_async(example_func.sleep_sync, executor=get_executor("thread"))  # type: ignore
 
     with pytest.raises(UnsupportedFunction):
-        transform_sync(example_func.sleep_async)
+        transform_sync(example_func.sleep_async, executor=get_executor("thread"))
 
     with pytest.raises(UnsupportedCallSite):
         _strict_get_ctx()

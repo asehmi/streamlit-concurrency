@@ -32,8 +32,9 @@ logger = logging.getLogger(__name__)
 
 def transform_sync(
     func: Callable[P, R],
+    *,
+    executor: cf.Executor,
     cache: Optional[CacheConf | dict] = None,
-    executor: cf.Executor | Literal["thread", "process"] = "thread",
     with_script_run_context: bool = False,
 ) -> Callable[P, Coroutine[None, None, R]]:
     """Transforms a *sync* function to do real work in executor
@@ -50,11 +51,8 @@ def transform_sync(
     @return: an async function
 
     """
-    assert executor == "thread"
     assert_is_transformable_sync(func)
 
-    if isinstance(executor, str):
-        executor = get_executor(executor)
     if not isinstance(executor, cf.Executor):
         raise ValueError(
             f"executor must be 'thread', 'process' or an instance of concurrent.futures.Executor, got {executor}"

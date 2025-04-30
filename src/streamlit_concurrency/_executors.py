@@ -1,8 +1,9 @@
 import functools
 import concurrent.futures as cf
 from typing import Literal
-from ._func_util import debug_enter_exit
 import threading
+from ._func_util import debug_enter_exit
+from ._errors import UnsupportedExecutor
 
 import logging
 
@@ -48,4 +49,4 @@ def get_executor(
         elif executor_type == "interpreter":
             return _get_interpreter_pool_executor()
         else:
-            raise ValueError(f"Unknown executor type: {executor_type}")
+            raise UnsupportedExecutor(f"Unknown executor type: {executor_type}")
