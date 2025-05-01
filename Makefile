@@ -5,10 +5,10 @@ CONDA_YML ?= conda-py310.yaml
 run: deps
 	venv/bin/streamlit run streamlit-concurrency.py --logger.level=INFO # --server.address=0.0.0.0
 
-deps: venv/.deps_installed requirements.txt
+deps: venv/.deps_installed
 
 
-venv/.deps_installed: requirements.txt
+venv/.deps_installed: venv requirements.txt
 	venv/bin/pip install -r requirements.txt
 	touch $@
 

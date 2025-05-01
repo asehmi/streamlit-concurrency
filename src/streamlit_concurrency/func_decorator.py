@@ -22,7 +22,9 @@ P = ParamSpec("P")
 class FuncDecorator:
     def __init__(
         self,
+        # TODO: this should be named cache_data
         cache: Optional[CacheConf | dict] = None,
+        # TODO: support st.cache_resource
         executor: Literal["thread", "process"] = "thread",
         with_script_run_context: bool = False,
     ):
@@ -80,5 +82,7 @@ def run_in_executor(
     if executor != "thread":
         raise UnsupportedExecutor("Executors other than 'thread' is not supported yet.")
     return FuncDecorator(
-        cache=cache, executor=executor, with_script_run_context=with_script_run_context
+        cache=cache,
+        executor=executor,
+        with_script_run_context=with_script_run_context,
     )
