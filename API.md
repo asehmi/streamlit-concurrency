@@ -9,7 +9,8 @@ import streamit as st
 from streamlit_concurrency import run_in_executor
 import asyncio
 
-# both sync or async function are supported, and get transformed into async function
+# the simplest way to use is to decoreate a function (only works for 'thread' executor)
+# both sync or async function are supported, and both get transformed into async function
 @run_in_executor(
     cache={'ttl': 1},
     with_script_run_context=True)
@@ -22,14 +23,21 @@ def my_sync_func():
 async def my_async_func():
     return 'from_async_func'
 
+# a function to run in non-thread executor cannot use the decorator syntax
+# (it has to have a separate importable definition)
+from streamlit_concurrency.demo import example_func
+remote_sync_func = run_in_executor(executor="process", cache={"ttl": 5})(
+    example_func.cpu_intensive_computation
+)
 
-# now they can run concurrently
+# now they can run concurrently inside script thread
 async def page_main():
-    ret1, ret2 = await asyncio.gather(
+    ret1, ret2, ret3 = await asyncio.gather(
         await my_sync_func()
         await my_async_func()
+        await remote_sync_func()
     )
-    st.write((ret1, ret2))
+    st.write((ret1, ret2, ret3))
 
 asyncio.run(page_main())
 ```
@@ -56,51 +64,57 @@ When true, capture the ScriptRunContext and add it to the executor thread runnin
 
 ### About `process` executor
 
-There are certain limits for a function to run in a _process_ executor.
+There are certain limits for a function to run in a _process_ executor, which is based on `concurrency.future.ProcessPoolExecutor`:
 
 0. The function cannot be `async`.
 
-1. The original function must be "importable", or defined at the top level of a named module.
+1. The original function must be _importable_, or defined at the top level of a importable module.
     - This means `run_in_executor` cannot be used as a decorator.
-    - This also means the function has to be defined in a non-page module.
+    - This also means the function has to be defined in a separate non-page module.
 
-2. The function should not depend on any Streamlit code, including other functions transformed by `run_in_executor` or `st.cache_*`.
+2. The function should not depend on any Streamlit code. This includes other functions transformed by `run_in_executor` or `st.cache_*`.
 
 3. The arguments and return value of the function need to pickle-serializable.
 
-The recommended use is to define a self-contained worker entrypoint in separate module, and transform it in page like `run_in_executor(executor='process')(entrypoint)`
+The recommended use is to define a self-contained worker entrypoint in separate module, handling required initialization. And transform it in page like `run_in_executor(executor='process')(entrypoint)`
 
-`cache=` can be specified to cache the result value from executor process.
+`cache=` still works. It is handled in stremalit process and can still cache the result value from executor process.
 
-Due to a nonconfigurable behavior of `multprocessing`, some code in may be loaded in executor process, and causes warning like `missing ScriptRunContext` or `to view a Streamlit app on a browser...` warnings. If no worse error occurs the warnings can be ignored.
+`multiprocessing` has a non-configurable behavior to load the entry script (the one specified in `streamlit run`) in worker process. This may cause warnings like `missing ScriptRunContext` or `to view a Streamlit app on a browser...`. If no worse error occurs the warnings can be ignored. You can try to remove such warnings or errors like:
 
+```py
+# root_page.py
+import streamlit as st
 
-## Recommended style
-
-
-
-## Caveats
-
-##
-
-The function must be "importable", or defined at the top level of a named module. Meaning it cannot be defined in a streamlit page which becomes `__main__` module when run.
-
-Also:
-
-- The function must not use Streamlit API. You will know this if you see ``
+if __name__ == '__main__':
+    # this does not get executed in worker process
+    st.markdown(...)
 
 
-            Ru
-            # ) and not use any Streamlit functions or objects.
+```
+
+
+## Recommended programming style: structured concurrency
+
+<!-- TODO: more -->
+
+<!-- TBD: should we recommend more complete framework like trio?-->
+
+## Caveats & FAQ
+
+
 
 ### `cache` and `with_script_run_context` together may cause problem
 
-In some versions
-Internally `st.cache_data` tries to cache updates to widgets. This may cause problem 
+In some versions of Streamlit it tries to cache widget updates from a function inside `st.cache_data()`. If you used both and see strange errors, try removing 1.
 
 ### `cache.show_spinner` is not supported
 
-Not supporting it is simpler. When transformed functions are `await`ed the running indicator works anyway.
+<!--
+Supporting it would implicitly (showing a spinner requires a ScriptRunContext)
+-->
+
+Not supporting it is simpler. When transformed functions are `await`ed in the script thread, the running human indicator works anyway.
 
 # `use_state`
 

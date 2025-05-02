@@ -20,12 +20,9 @@ st.write(f"Current Streamlit process pid: {os.getpid()}")
 dest = st.empty()
 
 #
-transformed_sync = run_in_executor(
-    executor="process",
-    cache={
-        "ttl": 5,
-    },
-)(example_func.cpu_intensive_computation)
+transformed_sync = run_in_executor(executor="process", cache={"ttl": 5})(
+    example_func.cpu_intensive_computation
+)
 
 
 # don't do this: a function must be "importable" to be used with a process executor
