@@ -61,10 +61,11 @@ When true, capture the ScriptRunContext and add it to the executor thread runnin
 
 ## Param: `executor: 'thread' | 'process' = 'thread'`
 
+The executor to run the transformed function in. `thread` uses a `concurrency.future.ThreadPoolExecutor`. `process` uses a `concurrency.future.ProcessPoolExecutor`. 
 
 ### About `process` executor
 
-There are certain limits for a function to run in a _process_ executor, which is based on `concurrency.future.ProcessPoolExecutor`:
+There are certain limits for a function to run in a _process_ executor.
 
 0. The function cannot be `async`.
 
