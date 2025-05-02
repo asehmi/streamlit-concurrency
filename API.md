@@ -42,14 +42,14 @@ async def page_main():
 asyncio.run(page_main())
 ```
 
-### Param: `cache: dict | None = None`
+## Param: `cache: dict | None = None`
 
 `cache` accepts a dict of params identical to [`st.cache_data`](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.cache_data).
 
 - Internally it does use `st.cache_data`. All `st.cache_data` params except `show_spinner` are supported.
 
 
-### Param: `with_script_run_context: bool = False`
+## Param: `with_script_run_context: bool = False`
 
 When true, capture the ScriptRunContext and add it to the executor thread running . Defaults to `False`.
 
