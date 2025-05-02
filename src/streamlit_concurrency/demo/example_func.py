@@ -5,7 +5,7 @@ import datetime
 import asyncio
 
 # don't do this. run_in_executor should be called from pages
-# from streamlit_concurrency import run_in_executor
+from streamlit_concurrency import run_in_executor
 
 
 def cpu_intensive_computation(n: int) -> tuple[int, int]:
@@ -16,13 +16,13 @@ def cpu_intensive_computation(n: int) -> tuple[int, int]:
     return result, os.getpid()
 
 
-# cpu_intensive_computation_in_process_executor = run_in_executor(
-#     executor="process",
-#     cache={
-#         "ttl": 5,
-#         "max_entries": 3,
-#     },
-# )(cpu_intensive_computation)
+cpu_intensive_computation_in_process_executor = run_in_executor(
+    executor="process",
+    cache={
+        "ttl": 5,
+        "max_entries": 3,
+    },
+)(cpu_intensive_computation)
 
 
 def cpu_heavy_sync(run_for_seconds: int, size=1000):
