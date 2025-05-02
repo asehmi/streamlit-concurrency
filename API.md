@@ -58,15 +58,21 @@ When true, capture the ScriptRunContext and add it to the executor thread runnin
 
 There are certain limits for a function to run in a _process_ executor.
 
+0. The function cannot be `async`.
+
 1. The original function must be "importable", or defined at the top level of a named module.
     - This means `run_in_executor` cannot be used as a decorator.
-    - This also means the function needs to be in a non-page module. Streamlit page defined Meaning it cannot be defined in a streamlit page which becomes `__main__` module when run.
+    - This also means the function has to be defined in a non-page module.
 
-2. The function must not depend on Streamlit code, including other functions transformed by `run_in_executor`. Otherwise you will see `missing ScriptRunContext` or `Warning: to view a Streamlit app on a browser...`
+2. The function should not depend on any Streamlit code, including other functions transformed by `run_in_executor` or `st.cache_*`.
 
+3. The arguments and return value of the function need to pickle-serializable.
 
-            Ru
-            # ) and not use any Streamlit functions or objects.
+The recommended use is to define a self-contained worker entrypoint in separate module, and transform it in page like `run_in_executor(executor='process')(entrypoint)`
+
+`cache=` can be specified to cache the result value from executor process.
+
+Due to a nonconfigurable behavior of `multprocessing`, some code in may be loaded in executor process, and causes warning like `missing ScriptRunContext` or `to view a Streamlit app on a browser...` warnings. If no worse error occurs the warnings can be ignored.
 
 
 ## Recommended style

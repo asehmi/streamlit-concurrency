@@ -4,6 +4,7 @@ from .demo import example_func
 from ._decorator_async import transform_async
 from ._errors import UnsupportedExecutor, UnsupportedFunction, UnsupportedCallSite
 from ._streamlit_hack import _strict_get_ctx, _prohibit_get_ctx
+from ._streamlit_util import has_streamlit_server
 from ._executors import get_executor
 import streamlit.runtime.scriptrunner as st_scriptrunner
 
@@ -24,6 +25,8 @@ def test_assertions():
 
     with pytest.raises(UnsupportedCallSite):
         _prohibit_get_ctx()
+
+    assert has_streamlit_server() is False
 
 
 def test_importable_function():

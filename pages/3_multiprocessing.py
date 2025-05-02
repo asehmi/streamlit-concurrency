@@ -25,7 +25,7 @@ transformed_sync = run_in_executor(
     cache={
         "ttl": 5,
     },
-)(example_func.cpu_heavy_sync)
+)(example_func.cpu_intensive_computation)
 
 
 # don't do this: a function must be "importable" to be used with a process executor
@@ -50,7 +50,9 @@ res1: running...
 res2: running...
 """)
     (res1, pid1), (res2, pid2) = await asyncio.gather(
-        transformed_sync(1000), transformed_sync(2000)
+        transformed_sync(100),
+        transformed_sync(200000000),
+        # example_func.cpu_intensive_computation_in_process_executor(2000),
     )
     dest.markdown(f"""
 res1: {res1} computed in process {pid1}

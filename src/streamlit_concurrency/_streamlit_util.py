@@ -1,6 +1,7 @@
 import contextlib
 import threading
 from typing import Optional, TYPE_CHECKING
+import functools
 
 if TYPE_CHECKING:
     from streamlit.runtime.scriptrunner import (
@@ -12,6 +13,17 @@ import logging
 from ._errors import UnsupportedCallSite
 
 logger = logging.getLogger(__name__)
+
+
+@functools.lru_cache(maxsize=1)
+def has_streamlit_server() -> bool:
+    import gc
+    from streamlit.web.server import Server
+
+    for o in gc.get_objects():
+        if isinstance(o, Server):
+            return True
+    return False
 
 
 def assert_st_script_run_ctx(callee: str) -> "ScriptRunContext":

@@ -2,6 +2,9 @@ import functools
 import concurrent.futures as cf
 from typing import Literal
 import threading
+
+# import multiprocessing as mp
+# import multiprocess as mps
 from ._func_util import debug_enter_exit
 from ._errors import UnsupportedExecutor
 
@@ -23,7 +26,9 @@ def _get_thread_pool_executor() -> cf.Executor:
 
 @functools.lru_cache(maxsize=1)
 def _get_process_pool_executor() -> cf.Executor:
-    return cf.ProcessPoolExecutor(max_tasks_per_child=4)
+    return cf.ProcessPoolExecutor(
+        max_tasks_per_child=4,  # mp_context=mp.get_context("spawn")
+    )
 
 
 @functools.lru_cache(maxsize=1)
