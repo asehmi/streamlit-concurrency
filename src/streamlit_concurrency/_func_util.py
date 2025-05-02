@@ -31,7 +31,7 @@ def assert_is_importable_func(func):
         raise UnsupportedFunction(f"Expected a module global function, got {func}.")
     if func.__module__ == "__main__":
         raise UnsupportedFunction(
-            f"Expected a function from a importable module, got {func.__qualname__} from {func.__module__}."
+            f"Expected a function from a importable module, got {func.__qualname__} defined in {func.__module__}."
         )
     if "." in func.__qualname__:
         raise UnsupportedFunction(

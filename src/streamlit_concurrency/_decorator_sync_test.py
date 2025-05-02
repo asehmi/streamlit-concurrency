@@ -101,9 +101,18 @@ async def test_sync_cached_inner_function(prohibit_get_run_ctx):
 
 @pytest.mark.asyncio
 async def test_sync_running_in_process_executor(prohibit_get_run_ctx):
-    transformed = run_in_executor(executor="process")(
-        example_func.sync_cpu_intensive_in_process_executor
+    transformed_in_callsite = run_in_executor(executor="process")(
+        example_func.cpu_intensive_computation
     )
-    result, executor_pid = await transformed(1000)
+    result, executor_pid = await transformed_in_callsite(1000)
     assert executor_pid != os.getpid()
     assert result == 332833500
+
+    # transformed in defining or any module
+
+    (
+        result,
+        executor_pid,
+    ) = await example_func.cpu_intensive_computation_in_process_executor(1001)
+    assert executor_pid != os.getpid()
+    assert result == 333833500

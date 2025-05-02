@@ -14,13 +14,25 @@ def read_repo_file(file_path: str) -> str:
 
 def render_page_src(page_file: str):
     st.divider()
-    with st.expander("Source code for this page", expanded=False):
+    with st.expander(f"Source code for current page", expanded=False):
         code = Path(page_file).read_text()
+        st.code(page_file)
         st.code(code, language="python", line_numbers=True)
     # st.markdown(f"Or view on [GitHub]({to_github_url(page_file)})")
 
 
-def to_github_url(page_file: str) -> str:
+def render_repo_file(path_in_repo: str, name: str):
+    """
+    Render a file from the repository in an expander.
+    """
+    st.divider()
+    with st.expander(f"Source code for {name}", expanded=False):
+        code = read_repo_file(path_in_repo)
+        st.code(f"// {to_github_url(path_in_repo)}")
+        st.code(code, language="python", line_numbers=True)
+        st.markdown(f"Or view on [GitHub]({to_github_url(path_in_repo)})")
+
+
+def to_github_url(path_in_repo: str) -> str:
     github_tree = "https://github.com/jokester/streamlit-concurrency/tree/main"
-    path_in_repo = Path(page_file).relative_to(REPO_ROOT)
     return f"{github_tree}/{path_in_repo}"

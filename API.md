@@ -1,6 +1,6 @@
 # `run_in_executor`
 
-`run_in_executor` decorator transforms functions to run them concurrently.
+`run_in_executor` transforms functions to run them concurrently.
 
 ## Usage
 
@@ -34,14 +34,14 @@ async def page_main():
 asyncio.run(page_main())
 ```
 
-## Param: `cache: dict | None = None`
+### Param: `cache: dict | None = None`
 
 `cache` accepts a dict of params identical to [`st.cache_data`](https://docs.streamlit.io/develop/api-reference/caching-and-state/st.cache_data).
 
 - Internally it does use `st.cache_data`. All `st.cache_data` params except `show_spinner` are supported.
 
 
-## Param: `with_script_run_context: bool = False`
+### Param: `with_script_run_context: bool = False`
 
 When true, capture the ScriptRunContext and add it to the executor thread running . Defaults to `False`.
 
@@ -51,10 +51,45 @@ When true, capture the ScriptRunContext and add it to the executor thread runnin
 
 - When this is enabled, the transformed function must be called from a thread containing a ScriptRunContext (typically a thread running page code)
 
+## Param: `executor: 'thread' | 'process' = 'thread'`
+
+
+### About `process` executor
+
+There are certain limits for a function to run in a _process_ executor.
+
+1. The original function must be "importable", or defined at the top level of a named module.
+    - This means `run_in_executor` cannot be used as a decorator.
+    - This also means the function needs to be in a non-page module. Streamlit page defined Meaning it cannot be defined in a streamlit page which becomes `__main__` module when run.
+
+2. The function must not depend on Streamlit code, including other functions transformed by `run_in_executor`. Otherwise you will see `missing ScriptRunContext` or `Warning: to view a Streamlit app on a browser...`
+
+
+            Ru
+            # ) and not use any Streamlit functions or objects.
+
+
+## Recommended style
+
+
+
 ## Caveats
 
-### Better not enable `cache` and `with_script_run_context` together
+##
 
+The function must be "importable", or defined at the top level of a named module. Meaning it cannot be defined in a streamlit page which becomes `__main__` module when run.
+
+Also:
+
+- The function must not use Streamlit API. You will know this if you see ``
+
+
+            Ru
+            # ) and not use any Streamlit functions or objects.
+
+### `cache` and `with_script_run_context` together may cause problem
+
+In some versions
 Internally `st.cache_data` tries to cache updates to widgets. This may cause problem 
 
 ### `cache.show_spinner` is not supported
