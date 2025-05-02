@@ -8,6 +8,10 @@ from ._executors import get_executor
 import streamlit.runtime.scriptrunner as st_scriptrunner
 
 
+def module_top_function():
+    pass
+
+
 def test_assertions():
     with pytest.raises(UnsupportedFunction):
         transform_async(example_func.sleep_sync, executor=get_executor("thread"))  # type: ignore
@@ -20,6 +24,18 @@ def test_assertions():
 
     with pytest.raises(UnsupportedCallSite):
         _prohibit_get_ctx()
+
+
+def test_importable_function():
+    def inner_function(): ...
+
+    with pytest.raises(UnsupportedFunction):
+        transform_sync(inner_function, executor=get_executor("process"))
+
+    with pytest.raises(UnsupportedFunction):
+        transform_sync(lambda l: 2, executor=get_executor("process"))
+
+    transform_sync(module_top_function, executor=get_executor("process"))
 
 
 def test_without_monkeypatch():

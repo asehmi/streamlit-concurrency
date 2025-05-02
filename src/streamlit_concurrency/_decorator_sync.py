@@ -13,11 +13,16 @@ from typing import (
     Callable,
     ParamSpec,
 )
-from ._func_util import assert_is_transformable_sync, debug_enter_exit, globalize
+from ._func_util import (
+    assert_is_transformable_sync,
+    debug_enter_exit,
+    assert_is_importable_func,
+)
 from ._streamlit_util import (
     assert_st_script_run_ctx,
     create_script_run_context_cm,
 )
+from ._executors import get_executor
 from ._func_cache import CacheConf
 
 R = TypeVar("R")
@@ -49,14 +54,19 @@ def transform_sync(
     """
     assert_is_transformable_sync(func)
 
-    if not isinstance(executor, cf.Executor):
-        raise ValueError(
-            f"executor must be 'thread', 'process' or an instance of concurrent.futures.Executor, got {executor}"
-        )
+    assert isinstance(executor, cf.Executor)
 
     if with_script_run_context and not isinstance(executor, cf.ThreadPoolExecutor):
         raise ValueError(
             "with_script_run_context=True can only be used with a ThreadPoolExecutor"
+        )
+
+    if not isinstance(executor, cf.ThreadPoolExecutor):
+        assert_is_importable_func(func)
+        assert not with_script_run_context
+        dispatch_and_wait = _transform_for_remote_executor(func, executor)
+        return transform_sync(
+            dispatch_and_wait, executor=get_executor("thread"), cache=cache
         )
 
     # dump_func_metadata(func)
@@ -75,7 +85,6 @@ def transform_sync(
             cm = contextlib.nullcontext()
 
         # the sync function to run in executor, doing the real work
-        @globalize
         def run_in_executor(*args, **kwargs) -> R:
             # NOTE: need to make sure this works with other executors
             if cache is None:
@@ -105,3 +114,18 @@ def transform_sync(
         return await asyncio.wrap_future(future)
 
     return functools.update_wrapper(wrapper, func)
+
+
+def _transform_for_remote_executor(func: Callable, executor: cf.Executor) -> Callable:
+    """
+    Returns:
+        Callable: a wrapper that works with st.cache_data()
+    """
+
+    def wrapper(*args, **kwargs):
+        return executor.submit(func, *args, **kwargs).result()
+
+    # allow st.cache_* API to distinguish inner functions
+    wrapper.__qualname__ = func.__qualname__
+
+    return wrapper

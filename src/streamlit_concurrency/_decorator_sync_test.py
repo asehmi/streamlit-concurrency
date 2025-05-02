@@ -1,3 +1,4 @@
+import os
 import pytest
 import logging
 import asyncio
@@ -5,6 +6,7 @@ from .func_decorator import run_in_executor
 import streamlit.runtime.scriptrunner as st_scriptrunner
 from .log_sink import create_log_sink
 from ._errors import UnsupportedCallSite
+from .demo import example_func
 
 
 logger = logging.getLogger(__name__)
@@ -95,3 +97,13 @@ async def test_sync_cached_inner_function(prohibit_get_run_ctx):
     ]
 
     assert logged_args == [(1,), (2,), (1,)]
+
+
+@pytest.mark.asyncio
+async def test_sync_running_in_process_executor(prohibit_get_run_ctx):
+    transformed = run_in_executor(executor="process")(
+        example_func.sync_cpu_intensive_in_process_executor
+    )
+    result, executor_pid = await transformed(1000)
+    assert executor_pid != os.getpid()
+    assert result == 332833500

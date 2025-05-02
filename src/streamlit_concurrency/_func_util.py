@@ -23,6 +23,22 @@ def assert_is_transformable_async(func):
         )
 
 
+def assert_is_importable_func(func):
+    """Asserts that the given function can be imported for another process"""
+    if not callable(func):
+        raise UnsupportedFunction(f"Expected a callable, got {func}.")
+    if not hasattr(func, "__module__"):
+        raise UnsupportedFunction(f"Expected a module global function, got {func}.")
+    if func.__module__ == "__main__":
+        raise UnsupportedFunction(
+            f"Expected a function from a importable module, got {func.__qualname__} from {func.__module__}."
+        )
+    if "." in func.__qualname__:
+        raise UnsupportedFunction(
+            f"Expected a function defined at module level. Got {func.__qualname__}."
+        )
+
+
 def assert_is_transformable_sync(func):
     """Asserts that the given function is an async function."""
     if not callable(func):
