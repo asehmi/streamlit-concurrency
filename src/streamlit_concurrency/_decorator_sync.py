@@ -7,7 +7,6 @@ import logging
 
 from typing import (
     Coroutine,
-    Literal,
     Optional,
     TypeVar,
     Callable,

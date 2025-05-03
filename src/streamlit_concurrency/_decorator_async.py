@@ -7,14 +7,13 @@ import logging
 
 from typing import (
     Coroutine,
-    Literal,
     Optional,
     TypeVar,
     Callable,
     ParamSpec,
 )
 
-from streamlit_concurrency._errors import UnsupportedExecutor
+from ._errors import UnsupportedExecutor
 from ._func_util import (
     assert_is_transformable_async,
     debug_enter_exit,
