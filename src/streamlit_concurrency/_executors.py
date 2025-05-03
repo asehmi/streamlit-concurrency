@@ -1,8 +1,12 @@
 import functools
 import concurrent.futures as cf
 from typing import Literal
-from ._func_util import debug_enter_exit
 import threading
+
+# import multiprocessing as mp
+# import multiprocess as mps
+from ._func_util import debug_enter_exit
+from ._errors import UnsupportedExecutor
 
 import logging
 
@@ -22,13 +26,21 @@ def _get_thread_pool_executor() -> cf.Executor:
 
 @functools.lru_cache(maxsize=1)
 def _get_process_pool_executor() -> cf.Executor:
-    raise NotImplementedError
+    return cf.ProcessPoolExecutor(
+        max_tasks_per_child=4,  # mp_context=mp.get_context("spawn")
+    )
 
 
 @functools.lru_cache(maxsize=1)
 def _get_interpreter_pool_executor() -> cf.Executor:
     # should be available since py3.14
-    return cf.InterpreterPoolExecutor()
+    try:
+        return cf.InterpreterPoolExecutor()  # type: ignore
+    except AttributeError as e:
+        raise NotImplementedError(
+            "InterpreterPoolExecutor is not available in this Python version."
+            "Please use a different executor type."
+        ) from e
 
 
 @functools.lru_cache(maxsize=1)
@@ -48,4 +60,4 @@ def get_executor(
         elif executor_type == "interpreter":
             return _get_interpreter_pool_executor()
         else:
-            raise ValueError(f"Unknown executor type: {executor_type}")
+            raise UnsupportedExecutor(f"Unknown executor type: {executor_type}")

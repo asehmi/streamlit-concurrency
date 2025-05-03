@@ -1,15 +1,12 @@
 import contextlib
 import threading
-from typing import Optional
-import streamlit as st
-import streamlit.runtime.scriptrunner as st_scriptrunner
+from typing import Optional, TYPE_CHECKING
+import functools
 
-from streamlit.runtime.scriptrunner import (
-    ScriptRunContext,
-)
-from streamlit.runtime.scriptrunner_utils.script_run_context import (
-    SCRIPT_RUN_CONTEXT_ATTR_NAME,
-)
+if TYPE_CHECKING:
+    from streamlit.runtime.scriptrunner import (
+        ScriptRunContext,
+    )
 
 import logging
 
@@ -18,7 +15,20 @@ from ._errors import UnsupportedCallSite
 logger = logging.getLogger(__name__)
 
 
-def assert_st_script_run_ctx(callee: str) -> ScriptRunContext:
+@functools.lru_cache(maxsize=1)
+def has_streamlit_server() -> bool:
+    import gc
+    from streamlit.web.server import Server
+
+    for o in gc.get_objects():
+        if isinstance(o, Server):
+            return True
+    return False
+
+
+def assert_st_script_run_ctx(callee: str) -> "ScriptRunContext":
+    import streamlit.runtime.scriptrunner as st_scriptrunner
+
     """Assert that the current thread is the script thread."""
     ctx = st_scriptrunner.get_script_run_ctx(suppress_warning=True)
     if ctx is None:
@@ -28,16 +38,29 @@ def assert_st_script_run_ctx(callee: str) -> ScriptRunContext:
     return ctx
 
 
-def _format_script_run_ctx(ctx: Optional[ScriptRunContext]):
+def _format_script_run_ctx(ctx: Optional["ScriptRunContext"]) -> str:
     return (
         f"ScriptRunContext(session={ctx.session_id}, page_script_hash={ctx.page_script_hash})"
-        if ctx
+        if ctx is not None
         else None
     )
 
 
+def assert_normal_mode():
+    pass
+
+
+def assert_bare_mode():
+    pass
+
+
 @contextlib.contextmanager
-def create_script_run_context_cm(ctx: ScriptRunContext):
+def create_script_run_context_cm(ctx: "ScriptRunContext"):
+    import streamlit.runtime.scriptrunner as st_scriptrunner
+    from streamlit.runtime.scriptrunner_utils.script_run_context import (
+        SCRIPT_RUN_CONTEXT_ATTR_NAME,
+    )
+
     """Create a context manager that
 
     - when enter, adds given script_run_ctx to the current thread

@@ -7,7 +7,6 @@ import logging
 
 from typing import (
     Coroutine,
-    Literal,
     Optional,
     TypeVar,
     Callable,
@@ -16,13 +15,14 @@ from typing import (
 from ._func_util import (
     assert_is_transformable_sync,
     debug_enter_exit,
+    assert_is_importable_func,
 )
 from ._streamlit_util import (
     assert_st_script_run_ctx,
     create_script_run_context_cm,
 )
-from ._func_cache import CacheConf
 from ._executors import get_executor
+from ._func_cache import CacheConf
 
 R = TypeVar("R")
 P = ParamSpec("P")
@@ -32,8 +32,9 @@ logger = logging.getLogger(__name__)
 
 def transform_sync(
     func: Callable[P, R],
+    *,
+    executor: cf.Executor,
     cache: Optional[CacheConf | dict] = None,
-    executor: cf.Executor | Literal["thread", "process"] = "thread",
     with_script_run_context: bool = False,
 ) -> Callable[P, Coroutine[None, None, R]]:
     """Transforms a *sync* function to do real work in executor
@@ -50,19 +51,21 @@ def transform_sync(
     @return: an async function
 
     """
-    assert executor == "thread"
     assert_is_transformable_sync(func)
 
-    if isinstance(executor, str):
-        executor = get_executor(executor)
-    if not isinstance(executor, cf.Executor):
-        raise ValueError(
-            f"executor must be 'thread', 'process' or an instance of concurrent.futures.Executor, got {executor}"
-        )
+    assert isinstance(executor, cf.Executor)
 
     if with_script_run_context and not isinstance(executor, cf.ThreadPoolExecutor):
         raise ValueError(
             "with_script_run_context=True can only be used with a ThreadPoolExecutor"
+        )
+
+    if not isinstance(executor, cf.ThreadPoolExecutor):
+        assert_is_importable_func(func)
+        assert not with_script_run_context
+        dispatch_and_wait = _transform_for_remote_executor(func, executor)
+        return transform_sync(
+            dispatch_and_wait, executor=get_executor("thread"), cache=cache
         )
 
     # dump_func_metadata(func)
@@ -110,3 +113,18 @@ def transform_sync(
         return await asyncio.wrap_future(future)
 
     return functools.update_wrapper(wrapper, func)
+
+
+def _transform_for_remote_executor(func: Callable, executor: cf.Executor) -> Callable:
+    """
+    Returns:
+        Callable: a wrapper that works with st.cache_data()
+    """
+
+    def wrapper(*args, **kwargs):
+        return executor.submit(func, *args, **kwargs).result()
+
+    # allow st.cache_* API to distinguish inner functions
+    wrapper.__qualname__ = func.__qualname__
+
+    return wrapper

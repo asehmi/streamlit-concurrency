@@ -1,6 +1,6 @@
 # `run_in_executor`
 
-`run_in_executor` decorator transforms functions to run them concurrently.
+`run_in_executor` transforms functions to run them concurrently.
 
 ## Usage
 
@@ -9,7 +9,8 @@ import streamit as st
 from streamlit_concurrency import run_in_executor
 import asyncio
 
-# both sync or async function are supported, and get transformed into async function
+# the simplest way to use is to decoreate a function (only works for 'thread' executor)
+# both sync or async function are supported, and both get transformed into async function
 @run_in_executor(
     cache={'ttl': 1},
     with_script_run_context=True)
@@ -22,14 +23,21 @@ def my_sync_func():
 async def my_async_func():
     return 'from_async_func'
 
+# a function to run in non-thread executor cannot use the decorator syntax
+# (it has to have a separate importable definition)
+from streamlit_concurrency.demo import example_func
+remote_sync_func = run_in_executor(executor="process", cache={"ttl": 5})(
+    example_func.cpu_intensive_computation
+)
 
-# now they can run concurrently
+# now they can run concurrently inside script thread
 async def page_main():
-    ret1, ret2 = await asyncio.gather(
+    ret1, ret2, ret3 = await asyncio.gather(
         await my_sync_func()
         await my_async_func()
+        await remote_sync_func()
     )
-    st.write((ret1, ret2))
+    st.write((ret1, ret2, ret3))
 
 asyncio.run(page_main())
 ```
@@ -51,15 +59,63 @@ When true, capture the ScriptRunContext and add it to the executor thread runnin
 
 - When this is enabled, the transformed function must be called from a thread containing a ScriptRunContext (typically a thread running page code)
 
-## Caveats
+## Param: `executor: 'thread' | 'process' = 'thread'`
 
-### Better not enable `cache` and `with_script_run_context` together
+The executor to run the transformed function in. `thread` uses a `concurrency.future.ThreadPoolExecutor`. `process` uses a `concurrency.future.ProcessPoolExecutor`. 
 
-Internally `st.cache_data` tries to cache updates to widgets. This may cause problem 
+### About `process` executor
+
+There are certain limits for a function to run in a _process_ executor.
+
+0. The function cannot be `async`.
+
+1. The original function must be _importable_, or defined at the top level of a importable module.
+    - This means `run_in_executor` cannot be used as a decorator.
+    - This also means the function has to be defined in a separate non-page module.
+
+2. The function should not depend on any Streamlit code. This includes other functions transformed by `run_in_executor` or `st.cache_*`.
+
+3. The arguments and return value of the function need to pickle-serializable.
+
+The recommended use is to define a self-contained worker entrypoint in separate module, handling required initialization. And transform it in page like `run_in_executor(executor='process')(entrypoint)`
+
+`cache=` still works. It is handled in stremalit process and can still cache the result value from executor process.
+
+`multiprocessing` has a non-configurable behavior to load the entry script (the one specified in `streamlit run`) in worker process. This may cause warnings like `missing ScriptRunContext` or `to view a Streamlit app on a browser...`. If no worse error occurs the warnings can be ignored. You can try to remove such warnings or errors like:
+
+```py
+# root_page.py
+import streamlit as st
+
+if __name__ == '__main__':
+    # this does not get executed in worker process
+    st.markdown(...)
+
+
+```
+
+
+## Recommended programming style: structured concurrency
+
+<!-- TODO: more -->
+
+<!-- TBD: should we recommend more complete framework like trio?-->
+
+## Caveats & FAQ
+
+
+
+### `cache` and `with_script_run_context` together may cause problem
+
+In some versions of Streamlit it tries to cache widget updates from a function inside `st.cache_data()`. If you used both and see strange errors, try removing 1.
 
 ### `cache.show_spinner` is not supported
 
-Not supporting it is simpler. When transformed functions are `await`ed the running indicator works anyway.
+<!--
+Supporting it would implicitly (showing a spinner requires a ScriptRunContext)
+-->
+
+Not supporting it is simpler. When transformed functions are `await`ed in the script thread, the running human indicator works anyway.
 
 # `use_state`
 

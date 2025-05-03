@@ -3,7 +3,7 @@ import logging
 import asyncio
 from .func_decorator import run_in_executor
 from .log_sink import create_log_sink
-from ._errors import UnsupportedCallSite
+from ._errors import UnsupportedCallSite, UnsupportedExecutor
 
 
 logger = logging.getLogger(__name__)
@@ -93,3 +93,11 @@ async def test_sync_cached_inner_function(prohibit_get_run_ctx):
     ]
 
     assert logged_args == [(1,), (2,), (1,)]
+
+
+@pytest.mark.asyncio
+async def test_sync_running_in_process_executor(prohibit_get_run_ctx):
+    async def unsupported(): ...
+
+    with pytest.raises(UnsupportedExecutor):
+        run_in_executor(executor="process")(unsupported)
