@@ -5,10 +5,13 @@ import time
 import streamlit_concurrency.demo as demo
 from streamlit_concurrency.log_sink import create_log_sink
 
+# TODO: can we capture stderr and show in page?
 st.markdown("""
 This page demostrates common issues when multithreading in streamlit.
             
 Please click a button and observe this page and the console.
+
+Go on to `multithreading` page to see how this library helps.
 """)
 
 st.session_state["foo"] = "foo-value"

@@ -6,18 +6,12 @@ import datetime
 import streamlit_concurrency.demo as demo
 from streamlit_concurrency import run_in_executor
 
-logger = demo.logger
-
 st.markdown("""
-This page demostrates multithreading with `streamlit-concurrency`.
-            
-Compared to `troubled multithreading` example:
+`@run_in_executor()` can transform your function to run in a thread pool executor, with automated workarounds:
 
-1. widget can be updated from another thread
-2. session state can be accessed in another thread
-3. "RUNNING" indicator correctly reflects code running in executor
-4. internally the ScriptRunContext object gets context-managed and won't be leaked
-
+1. widget can be updated by your function from another thread
+2. session state can be accessed in your function from another thread
+3. the ScriptRunContext object gets context-managed and won't be leaked
 """)
 st.session_state["foo"] = "foo-value"
 

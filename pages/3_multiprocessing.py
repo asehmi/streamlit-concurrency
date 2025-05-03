@@ -10,10 +10,9 @@ from streamlit_concurrency.demo import (
 from streamlit_concurrency import run_in_executor
 
 st.markdown(f"""
-A function with `executor='process'` runs in a separate process. This is useful for CPU-intensive tasks that can run faster.
+A function with `executor='process'` runs in a separate process. This is most helpful for CPU-intensive tasks that can run faster without Python GIL.
 
 There are certain limits to what can be run in a process executor. See [API doc]({to_github_url("API.md")}) for details.
-            
 """)
 st.write(f"Current Streamlit process pid: {os.getpid()}")
 
