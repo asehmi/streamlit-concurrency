@@ -29,8 +29,7 @@ def _get_thread_pool_executor() -> cf.Executor:
 def _get_process_pool_executor() -> cf.Executor:
     args = {}
 
-    python_ver = (sys.version_info.major, sys.version_info.minor)
-    if python_ver > (3, 10):
+    if sys.version_info > (3, 10):
         # retire executor earlier to be safe
         args["max_tasks_per_child"] = 4
 
