@@ -5,7 +5,6 @@ from typing import (
     Optional,
     ParamSpec,
     Protocol,
-    Self,
     Type,
     TypeVar,
     Any,
@@ -13,6 +12,7 @@ from typing import (
     Union,
     overload,
 )
+from typing_extensions import Self
 from ._streamlit_util import assert_st_script_run_ctx
 import logging
 
